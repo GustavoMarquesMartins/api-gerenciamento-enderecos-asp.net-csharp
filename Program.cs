@@ -1,5 +1,6 @@
 
 using GerenciamentoDeEndereco.Infra;
+using GerenciamentoDeEndereco.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using System.Configuration;
@@ -19,8 +20,10 @@ builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
 });
 
-// Adicionar AutoMapper ao contêiner de injeção de dependência
+// Adiciona AutoMapper ao contêiner de injeção de dependência
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddScoped<JwtService>(sp => new JwtService("1K5G3tj9QjSP56aEe2C3vrY9ZbFWd8xj"));
 
 
 var app = builder.Build();
@@ -38,6 +41,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseMiddleware<JwtAuthenticationMiddleware>("1K5G3tj9QjSP56aEe2C3vrY9ZbFWd8xj");
 
 app.Run();
 

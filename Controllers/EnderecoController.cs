@@ -3,6 +3,7 @@ using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciamentoDeEndereco.Controllers
