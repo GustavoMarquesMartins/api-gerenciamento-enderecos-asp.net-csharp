@@ -1,15 +1,12 @@
 ﻿using GerenciamentoDeEndereco.Infra;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using MySql.Data.MySqlClient;
-using System;
-using System.Threading.Tasks;
+using MySqlConnector;
 
 namespace GerenciamentoDeEndereco.Controllers
 {
     [ApiController]
-    [Route("/autenticacao")]
+    [Route("[controller]")]
     public class Autenticacao : ControllerBase
     {
         private readonly UserDbContext _db;
@@ -32,17 +29,10 @@ namespace GerenciamentoDeEndereco.Controllers
                     new MySqlParameter("@Senha", senha)
                 ).ToListAsync();
 
-                if (usuarios != null && usuarios.Count > 0)
-                {
-                    return Ok("Usuário existente");
-                }
-                else
-                {
-                    return NotFound("Usuário não encontrado");
-                }
-            }
-            catch (Exception ex)
-            {
+                return (usuarios != null && usuarios.Count > 0) ? Ok("Usuário existente") : NotFound("Usuário não encontrado");
+
+            }catch (Exception ex)
+            { 
                 return StatusCode(500, "Ocorreu um erro interno. Detalhes: " + ex.Message);
             }
         }

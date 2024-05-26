@@ -30,7 +30,5 @@ namespace GerenciamentoDeEndereco.DTO
 
         [Required(ErrorMessage = "O campo usuarioId não pode ficar em branco")]
         public long usuarioId { get; set; }
-
-
     }
 }

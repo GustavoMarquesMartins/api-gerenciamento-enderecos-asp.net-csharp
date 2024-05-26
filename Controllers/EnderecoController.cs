@@ -37,10 +37,7 @@ namespace GerenciamentoDeEndereco.Controllers
         {
             var endereco = _db.Enderecos.Find(id);
 
-            if (endereco == null)
-            {
-                return NotFound("Endereço não encontrado!");
-            }
+            if (endereco == null) return NotFound("Endereço não encontrado!");
 
             var enderecoResponse = _mapper.Map<EnderecoResponse>(endereco);
 
@@ -51,10 +48,8 @@ namespace GerenciamentoDeEndereco.Controllers
         public IActionResult Post(EnderecoDTO DTO)
         {
             var usuarioSolicitado = _db.Usuarios.Find(DTO.usuarioId);
-            if (usuarioSolicitado == null)
-            {
-                return NotFound("Usuário solicitado não encontrado!");
-            }
+            
+            if (usuarioSolicitado == null) return NotFound("Usuário solicitado não encontrado!");
 
             var endereco = _mapper.Map<Endereco>(DTO);
             var enderecoSalvo = _db.Enderecos.Add(endereco);
@@ -71,10 +66,7 @@ namespace GerenciamentoDeEndereco.Controllers
         {
             var endereco = _db.Enderecos.Find(id);
 
-            if (endereco == null)
-            {
-                return NotFound("Endereço não encontrado!");
-            }
+            if (endereco == null) return NotFound("Endereço não encontrado!");
 
             _db.Enderecos.Remove(endereco);
             _db.SaveChanges();
@@ -83,39 +75,21 @@ namespace GerenciamentoDeEndereco.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult AtualizarDadosEndereco(long id, [FromBody] EnderecoDTO novosDados)
+        public IActionResult AtualizarDadosEndereco(long id, [FromBody] EnderecoEdicaoDTO novosDados)
         {
             var endereco = _db.Enderecos.Find(id);
 
-            if (endereco == null)
-            {
-                return NotFound("Endereço não encontrado!");
-            }
+            if (endereco == null)   return NotFound("Endereço não encontrado!");
 
-            if (novosDados.cep != null)
-            {
-                endereco.cep = novosDados.cep;
-            }
+            if (novosDados.cep != null) endereco.cep = novosDados.cep;
 
-            if (novosDados.logradouro != null)
-            {
-                endereco.logradouro = novosDados.logradouro;
-            }
+            if (novosDados.logradouro != null) endereco.logradouro = novosDados.logradouro;
 
-            if (novosDados.complemento != null)
-            {
-                endereco.complemento = novosDados.complemento;
-            }
+            if (novosDados.complemento != null) endereco.complemento = novosDados.complemento;
 
-            if (novosDados.uf != null)
-            {
-                endereco.uf = novosDados.uf;
-            }
+            if (novosDados.uf != null) endereco.uf = novosDados.uf;
 
-            if (novosDados.numero != null)
-            {
-                endereco.numero = novosDados.numero;
-            }
+            if (novosDados.numero != null) endereco.numero = novosDados.numero;
 
             var enderecoAtualizado = _db.Enderecos.Update(endereco);
             _db.SaveChanges();
