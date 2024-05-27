@@ -3,12 +3,14 @@ using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciamentoDeEndereco.Controllers
 {
     [ApiController]
     [Route("/[controller]")]
+    [AllowAnonymous]
     public class UsuarioController : ControllerBase
     {
         private UserDbContext _db;
@@ -30,6 +32,7 @@ namespace GerenciamentoDeEndereco.Controllers
             return Ok(_mapper.Map<UsuarioResponse>(usuario));
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult Post(UsuarioDTO DTO)
         {
@@ -40,6 +43,10 @@ namespace GerenciamentoDeEndereco.Controllers
             var uri = new Uri($"{Request.Scheme}://{Request.Host}/usuarios/{usuarioSalvo.Entity.id}");
             var usuarioResponse = _mapper.Map<UsuarioResponse>(usuarioSalvo.Entity);
 
+            Console.WriteLine("passei por aqui");
+            Console.WriteLine("passei por aqui");
+            Console.WriteLine("passei por aqui");
+            Console.WriteLine("passei por aqui");
             return Created(uri, usuarioResponse);
         }
 

@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 
 namespace GerenciamentoDeEndereco.DTO
 {
+    [AllowAnonymous]
     public class UsuarioDTO
     {
         [Required(ErrorMessage = "O campo nome completo não pode ficar em branco")]

@@ -19,7 +19,13 @@ namespace GerenciamentoDeEndereco.Security
 
         public async Task Invoke(HttpContext context)
         {
-            if (context.Request.Path == "/Autenticacao")
+            if (context.Request.Path.StartsWithSegments("/Autenticacao") && context.Request.Method == "POST")
+            {
+                await _next(context);
+                return;
+            }
+
+            if (context.Request.Path.StartsWithSegments("/Usuario") && context.Request.Method == "POST")
             {
                 await _next(context);
                 return;
@@ -31,7 +37,7 @@ namespace GerenciamentoDeEndereco.Security
                 await context.Response.WriteAsync("Authorization header is missing");
                 return;
             }
-
+            
             var token = authHeader.ToString().Replace("Bearer ", "");
 
             var tokenHandler = new JwtSecurityTokenHandler();
