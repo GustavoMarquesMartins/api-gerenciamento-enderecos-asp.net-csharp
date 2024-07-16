@@ -43,10 +43,6 @@ namespace GerenciamentoDeEndereco.Controllers
             var uri = new Uri($"{Request.Scheme}://{Request.Host}/usuarios/{usuarioSalvo.Entity.id}");
             var usuarioResponse = _mapper.Map<UsuarioResponse>(usuarioSalvo.Entity);
 
-            Console.WriteLine("passei por aqui");
-            Console.WriteLine("passei por aqui");
-            Console.WriteLine("passei por aqui");
-            Console.WriteLine("passei por aqui");
             return Created(uri, usuarioResponse);
         }
 

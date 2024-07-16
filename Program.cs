@@ -1,4 +1,5 @@
 using GerenciamentoDeEndereco.Infra;
+using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 builder.Services.AddDbContext<UserDbContext>(options =>
 {
@@ -56,3 +58,6 @@ app.MapControllers();
 app.UseMiddleware<JwtAuthenticationMiddleware>("1K5G3tj9QjSP56aEe2C3vrY9ZbFWd8xj");
 
 app.Run();
+
+
+

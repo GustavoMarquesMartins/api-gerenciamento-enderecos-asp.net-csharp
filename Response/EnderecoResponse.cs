@@ -2,6 +2,7 @@
 {
     public class EnderecoResponse
     {
+        public long id { get; set; }
         public string Cep { get; set; }
         public string logradouro { get; set; }
         public string Complemento { get; set; }

@@ -28,7 +28,5 @@ namespace GerenciamentoDeEndereco.DTO
         [Required(ErrorMessage = "O campo Numero não pode ficar em branco")]
         public int numero { get; set; }
 
-        [Required(ErrorMessage = "O campo usuarioId não pode ficar em branco")]
-        public long usuarioId { get; set; }
     }
 }
