@@ -5,6 +5,8 @@ using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace GerenciamentoDeEndereco.Controllers
 {
@@ -22,61 +24,112 @@ namespace GerenciamentoDeEndereco.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("{id}")]
-        public IActionResult Get(long id)
+        [NonAction]
+        public Usuario getCurrentUser()
         {
+            var id = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
             var usuario = _db.Usuarios.Find(id);
-
-            if (usuario == null) return NotFound("Endereço não encontrado!");
-
-            return Ok(_mapper.Map<UsuarioResponse>(usuario));
+            return usuario != null ? usuario : throw new InvalidOperationException("Usuário não encontrado");
         }
+
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> Get(long id)
+        {
+            try
+            {
+                var currentUserId = getCurrentUser().id;
+
+                if (currentUserId != id) return Unauthorized("Você não tem permissão suficiente para visualizar os dados solicitados");
+
+                var usuario = await _db.Usuarios.FindAsync(id);
+
+                if (usuario == null)
+                    return NotFound("Usuário não encontrado");
+
+                return Ok(_mapper.Map<UsuarioResponse>(usuario));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao buscar usuário. Por favor, tente novamente mais tarde.");
+            }
+        }
+
 
         [Authorize]
         [HttpPost]
-        public IActionResult Post(UsuarioDTO DTO)
+        public async Task<IActionResult> Post(UsuarioDTO DTO)
         {
-            var usuario = _mapper.Map<Usuario>(DTO);
-            var usuarioSalvo = _db.Usuarios.Add(usuario);
-            _db.SaveChanges();
+            try
+            {
+                var usuario = _mapper.Map<Usuario>(DTO);
 
-            var uri = new Uri($"{Request.Scheme}://{Request.Host}/usuarios/{usuarioSalvo.Entity.id}");
-            var usuarioResponse = _mapper.Map<UsuarioResponse>(usuarioSalvo.Entity);
+                var usuarioSalvo = await _db.Usuarios.AddAsync(usuario);
+                await _db.SaveChangesAsync();
 
-            return Created(uri, usuarioResponse);
+                var uri = new Uri($"{Request.Scheme}://{Request.Host}/usuario/{usuarioSalvo.Entity.id}");
+                var usuarioResponse = _mapper.Map<UsuarioResponse>(usuarioSalvo.Entity);
+
+                return Created(uri, usuarioResponse);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao criar usuário. Por favor, tente novamente mais tarde.");
+            }
         }
 
+
         [HttpDelete("{id}")]
-        public IActionResult Delete(long id)
+        [Authorize]
+        public async Task<IActionResult> Delete(long id)
         {
-            var usuario = _db.Usuarios.Find(id);
+            try
+            {
+                var currentUserId = getCurrentUser().id;
 
-            if (usuario == null) return NotFound("Endereço não encontrado!");
+                if (currentUserId != id) return Unauthorized("Permissão insuficiente para realizar essa ação.");
 
-            _db.Usuarios.Remove(usuario);
-            _db.SaveChanges();
-            return NoContent();
+                var usuario = _db.Usuarios.Find(id);
+
+                _db.Usuarios.Remove(usuario);
+
+                await _db.SaveChangesAsync();
+                
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao deletar usuário. Por favor, verifique suas permissões de usuário.");
+            }
         }
 
         [HttpPut("{id}")]
-        public IActionResult AtualizarDadosUsuario(long id, [FromBody] UsuarioDTO dadosNovos)
+        [Authorize]
+        public async Task<IActionResult> Put(long id, [FromBody] UsuarioEdicaoDTO dadosNovos)
         {
-            var usuario = _db.Usuarios.Find(id);
+            try
+            {
+                dadosNovos.validateDate();
 
-            if (usuario == null) return NotFound("Usuário não encontrado!");
+                var currentUserId = getCurrentUser().id;
+                if (currentUserId != id) return Unauthorized("Permissão insuficiente para realizar essa ação.");
 
-            if(dadosNovos.nomeCompleto != null) usuario.nomeCompleto = dadosNovos.nomeCompleto;
-            
-            if (dadosNovos.nomeUsuario != null) usuario.nomeUsuario = dadosNovos.nomeUsuario;
+                var usuario = await _db.Usuarios.FindAsync(id);
 
-            if (dadosNovos.nomeUsuario != null) usuario.senha = dadosNovos.senha;
+                if (dadosNovos.nomeCompleto != null) usuario.nomeCompleto = dadosNovos.nomeCompleto;
+                if (dadosNovos.nomeUsuario != null) usuario.nomeUsuario = dadosNovos.nomeUsuario;
+                if (dadosNovos.senha != null) usuario.senha = dadosNovos.senha;
 
-            var usuarioAtualizado= _db.Usuarios.Update(usuario);
-            _db.SaveChanges();
-            
-            var usuarioResponse = _mapper.Map<UsuarioResponse>(usuarioAtualizado.Entity);
+                _db.Usuarios.Update(usuario);
+                await _db.SaveChangesAsync();
 
-            return Ok(usuarioResponse);
+                var usuarioResponse = _mapper.Map<UsuarioResponse>(usuario);
+                return Ok(usuarioResponse);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar atualizar usuário : " + ex.Message);
+            }
         }
     }
 }

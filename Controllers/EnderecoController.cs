@@ -16,15 +16,18 @@ namespace GerenciamentoDeEndereco.Controllers
     [Route("[controller]")]
     public class EnderecoController : ControllerBase
     {
+        // Declaração de variáveis de contexto do banco de dados e do AutoMapper.
         private UserDbContext _db;
         private readonly IMapper _mapper;
 
+        // Construtor que inicializa o contexto do banco de dados e o AutoMapper.
         public EnderecoController(UserDbContext db, IMapper mapper)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        // Método para obter o usuário atual logado a partir dos claims do token.
         [NonAction]
         public Usuario getCurrentUser()
         {
@@ -34,6 +37,7 @@ namespace GerenciamentoDeEndereco.Controllers
             return usuario;
         }
 
+        // Endpoint para obter todos os endereços do usuário atual.
         [HttpGet]
         public async Task<IActionResult> Get()
         {
@@ -63,7 +67,7 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
-
+        // Endpoint para obter um endereço específico pelo ID.
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(long id)
         {
@@ -86,6 +90,7 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
+        // Endpoint para adicionar um novo endereço.
         [HttpPost]
         public async Task<IActionResult> Post(EnderecoDTO DTO)
         {
@@ -110,7 +115,7 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
-
+        // Endpoint para deletar um endereço pelo ID.
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id)
         {
@@ -124,6 +129,7 @@ namespace GerenciamentoDeEndereco.Controllers
             return NoContent();
         }
 
+        // Endpoint para atualizar dados de um endereço pelo ID.
         [HttpPut("{id}")]
         public async Task<IActionResult> AtualizarDadosEndereco(long id, [FromBody] EnderecoEdicaoDTO novosDados)
         {
@@ -144,6 +150,5 @@ namespace GerenciamentoDeEndereco.Controllers
 
             return Ok(enderecoResponse);
         }
-
-        }
     }
+}
