@@ -133,22 +133,30 @@ namespace GerenciamentoDeEndereco.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> AtualizarDadosEndereco(long id, [FromBody] EnderecoEdicaoDTO novosDados)
         {
-            var endereco = await _db.Enderecos.FindAsync(id);
+            try
+            {
+                novosDados.validateDate();
 
-            if (endereco == null || endereco.usuarioId != getCurrentUser().id) return NotFound("Endereço não encontrado!");
+                var endereco = await _db.Enderecos.FindAsync(id);
 
-            if (novosDados.cep != null) endereco.cep = novosDados.cep;
-            if (novosDados.logradouro != null) endereco.logradouro = novosDados.logradouro;
-            if (novosDados.complemento != null) endereco.complemento = novosDados.complemento;
-            if (novosDados.uf != null) endereco.uf = novosDados.uf;
-            if (novosDados.numero != null) endereco.numero = novosDados.numero;
+                if (endereco == null || endereco.usuarioId != getCurrentUser().id) return NotFound("Endereço não encontrado!");
 
-            _db.Enderecos.Update(endereco);
-            await _db.SaveChangesAsync();
+                if (novosDados.cep != null) endereco.cep = novosDados.cep;
+                if (novosDados.logradouro != null) endereco.logradouro = novosDados.logradouro;
+                if (novosDados.complemento != null) endereco.complemento = novosDados.complemento;
+                if (novosDados.uf != null) endereco.uf = novosDados.uf;
+                if (novosDados.numero != null && novosDados.numero != 0) endereco.numero = novosDados.numero;
 
-            var enderecoResponse = _mapper.Map<EnderecoResponse>(endereco);
+                _db.Enderecos.Update(endereco);
+                await _db.SaveChangesAsync();
 
-            return Ok(enderecoResponse);
+                var enderecoResponse = _mapper.Map<EnderecoResponse>(endereco);
+
+                return Ok(enderecoResponse);
+            }
+            catch (Exception ex) {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar atualizar endereço : " + ex.Message);
+            }
         }
     }
 }

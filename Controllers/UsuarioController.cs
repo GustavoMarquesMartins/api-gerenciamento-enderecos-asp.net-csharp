@@ -44,9 +44,6 @@ namespace GerenciamentoDeEndereco.Controllers
 
                 var usuario = await _db.Usuarios.FindAsync(id);
 
-                if (usuario == null)
-                    return NotFound("Usuário não encontrado");
-
                 return Ok(_mapper.Map<UsuarioResponse>(usuario));
             }
             catch (Exception ex)
