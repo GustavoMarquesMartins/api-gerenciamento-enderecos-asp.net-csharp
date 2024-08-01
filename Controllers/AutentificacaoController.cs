@@ -19,7 +19,7 @@ namespace GerenciamentoDeEndereco.Controllers
         public Autenticacao(UserDbContext db, JwtService jwtService)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
-            _jwtService = jwtService;
+            _jwtService = jwtService;   
 
         }
 
