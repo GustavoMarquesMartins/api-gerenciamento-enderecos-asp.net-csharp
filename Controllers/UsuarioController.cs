@@ -63,20 +63,17 @@ namespace GerenciamentoDeEndereco.Controllers
             return usuario;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet]
         [Authorize]
-        public async Task<IActionResult> Get(long id)
+        public async Task<IActionResult> Get()
         {
             try
             {
                 // Obtém o usuário atual
                 var currentUser = await getCurrentUser();
 
-                // Verifica se o ID do usuário atual corresponde ao ID fornecido
-                if (currentUser.id != id) return Unauthorized("Você não tem permissão suficiente para visualizar os dados solicitados");
-
                 // Encontra o usuário com o ID fornecido
-                var usuario = await _db.Usuarios.FindAsync(id);
+                var usuario = await _db.Usuarios.FindAsync(currentUser.id);
 
                 // Mapeia o usuário para o modelo de resposta e retorna a resposta OK
                 return Ok(_mapper.Map<UsuarioResponse>(usuario));
