@@ -1,15 +1,54 @@
+using dotenv.net;
+using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using System.Configuration;
-using System.Security.Claims;
+using System;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Carrega o arquivo .env
+DotEnv.Load();
+
+// Configura o arquivo appsettings.json
+builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+// Configura variáveis de ambiente
+builder.Configuration.AddEnvironmentVariables();
+
+// Recupera variáveis de ambiente e configurações
+var smtpEmail = builder.Configuration["SMTP_EMAIL"];
+var smtpPassword = builder.Configuration["SMTP_PASSWORD"];
+var secretKey = builder.Configuration["CHAVE_SECRETA_APLICACAO"];
+var dbHost = builder.Configuration["DATABASE_HOST"];
+var dbPort = builder.Configuration["DATABASE_PORT"];
+var dbName = builder.Configuration["DATABASE_NAME"];
+var dbUser = builder.Configuration["DATABASE_USER"];
+var dbPassword = builder.Configuration["DATABASE_PASSWORD"];
+
+// Construa a string de conexão do banco de dados
+var mySqlConnectionString = $"Server={dbHost};Port={dbPort};Database={dbName};User={dbUser};Password={dbPassword};";
+
+// Configura os serviços
+builder.Services.AddDbContext<UserDbContext>(options =>
+{
+    if (string.IsNullOrEmpty(mySqlConnectionString))
+    {
+        throw new InvalidOperationException("A string de conexão do MySqlConnection não foi encontrada.");
+    }
+    options.UseMySql(mySqlConnectionString, ServerVersion.AutoDetect(mySqlConnectionString));
+});
+
+builder.Services.AddSingleton<IEmailService>(sp =>
+    new EmailService(smtpEmail, smtpPassword));
 
 builder.Services.AddAuthorization(options =>
 {
@@ -17,34 +56,26 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User"));
 });
 
-
-// Adiciona serviços ao contêiner de injeção de dependência.
+// Adiciona serviços ao contêiner de injeção de dependência
 builder.Services.AddControllers(); // Adiciona serviços para controladores
 builder.Services.AddEndpointsApiExplorer(); // Adiciona serviços para API Explorer
 builder.Services.AddSwaggerGen(); // Configura o Swagger para geração de documentação
 
-// Configuração do DbContext para a conexão com o banco de dados MySQL
-builder.Services.AddDbContext<UserDbContext>(options =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-});
-
-// Adiciona AutoMapper ao contêiner de injeção de dependência para mapeamento de objetos
+// Adiciona AutoMapper ao contêiner de injeção de dependência
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// Registra o serviço JwtService com uma chave secreta específica
-builder.Services.AddScoped<JwtService>(sp => new JwtService("1K5G3tj9QjSP56aEe2C3vrY9ZbFWd8xj"));
+// Registra o serviço JwtService com a chave secreta
+builder.Services.AddScoped<JwtService>(sp => new JwtService(secretKey));
 
 // Configuração do CORS para permitir requisições de qualquer origem, método e cabeçalho
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhost",
-        builder =>
+        policy =>
         {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
         });
 });
 
@@ -60,8 +91,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection(); // Redireciona requisições HTTP para HTTPS
 
-// Middleware de autenticação deve vir antes do middleware de autorização
-app.UseAuthentication();
+app.UseAuthentication(); // Middleware de autenticação deve vir antes do middleware de autorização
 app.UseAuthorization();
 
 // Aplica a política CORS configurada ao pipeline
@@ -70,6 +100,6 @@ app.UseCors("AllowLocalhost");
 app.MapControllers(); // Mapeia os controladores para o pipeline de requisição
 
 // Adiciona o middleware customizado JwtAuthenticationMiddleware ao pipeline
-app.UseMiddleware<JwtAuthenticationMiddleware>("1K5G3tj9QjSP56aEe2C3vrY9ZbFWd8xj");
+app.UseMiddleware<JwtAuthenticationMiddleware>(secretKey);
 
 app.Run(); // Executa a aplicação

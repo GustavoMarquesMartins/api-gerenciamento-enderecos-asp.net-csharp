@@ -8,7 +8,7 @@ namespace GerenciamentoDeEndereco.DTO
     {
         public string? nomeCompleto { get; set; }
 
-        public string? nomeUsuario { get; set; }
+        public string? email { get; set; }
 
         public string? senha { get; set; }
 
@@ -21,12 +21,14 @@ namespace GerenciamentoDeEndereco.DTO
                 if (!Regex.IsMatch(nomeCompletoEsperado, padrao)) throw new ArgumentException("o campo nome completo e inválido.");
             }
            
-            if(nomeUsuario != null)
+            if(email != null)
             {
-                if (nomeUsuario.Length < 5) throw new ArgumentException("o campo nome usuário deve conter pelo menos 5 caractéres");
+                string padrao = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+                if (!Regex.IsMatch(email, padrao)) throw new ArgumentException("o campo e-mail e inválido.");
+
             }
 
-            if(senha != null)
+            if (senha != null)
             {
                 string padrao = @"^(?=.*[A-Z])(?=.*[^\w\s]).+$";
                 if (!Regex.IsMatch(senha, padrao) || senha.Length < 6) throw new SenhaInvalidaException();

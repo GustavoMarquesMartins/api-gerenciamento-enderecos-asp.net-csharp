@@ -19,12 +19,15 @@ namespace GerenciamentoDeEndereco.Controllers
     {
         private readonly UserDbContext _db; // Contexto do banco de dados
         private readonly IMapper _mapper; // Serviço de mapeamento DTO
+        private readonly IEmailService _emailService;
 
         // Construtor para injeção de dependências
-        public UsuarioController(UserDbContext db, IMapper mapper)
+        public UsuarioController(UserDbContext db, IMapper mapper, IEmailService emailService)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db)); // Garante que o contexto do banco de dados não seja nulo
             _mapper = mapper;
+            _emailService = emailService;
+
         }
 
         [NonAction]
@@ -163,7 +166,7 @@ namespace GerenciamentoDeEndereco.Controllers
 
                 // Atualiza os dados do usuário com base no DTO fornecido
                 if (dadosNovos.nomeCompleto != null) usuario.nomeCompleto = dadosNovos.nomeCompleto;
-                if (dadosNovos.nomeUsuario != null) usuario.nomeUsuario = dadosNovos.nomeUsuario;
+                if (dadosNovos.email != null) usuario.email = dadosNovos.email;
                 if (dadosNovos.senha != null) usuario.senha = dadosNovos.senha;
 
                 // Atualiza o usuário no banco de dados e salva as alterações
@@ -181,24 +184,29 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
-        [HttpPut("redefinir-senha")]
+        [HttpPut("{token}")]
         [Authorize]
-        public async Task<IActionResult> redefinirSenha([FromBody] RedefinirSenha senha)
+        public async Task<IActionResult> redefinirSenha(string token, [FromBody] NovaSenha dados)
         {
             try
             {
-                // Valida a nova senha
-                if (!senha.senha.IsNullOrEmpty())
-                {
-                    string padrao = @"^(?=.*[A-Z])(?=.*[^\w\s]).+$";
-                    if (!Regex.IsMatch(senha.senha, padrao) || senha.senha.Length < 6) throw new Exception("Senha invalida");
-                }
+                dados.validaDadosEntrada();
+
+                // Valida token de recuperação
+                if (!token.IsNullOrEmpty()) return BadRequest("Token não incluso na requisição.");
+
+                var tokenRedefinicaoSenha = await _db.PasswordResetTokens.FindAsync(token);
+
+                if (!token.IsNullOrEmpty()) return BadRequest("Token inválido.");
+
+                string padrao = @"^(?=.*[A-Z])(?=.*[^\w\s]).+$";
+                if (!Regex.IsMatch(dados.novaSenha, padrao) || dados.novaSenha.Length < 6) throw new Exception("Senha invalida");
 
                 // Obtém o usuário atual
                 Usuario usuario = await getCurrentUser();
 
                 // Atualiza a senha do usuário
-                usuario.senha = senha.senha;
+                usuario.senha = dados.novaSenha;
 
                 // Atualiza o usuário no banco de dados e salva as alterações
                 _db.Usuarios.Update(usuario);
@@ -214,5 +222,46 @@ namespace GerenciamentoDeEndereco.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar atualizar usuário : " + ex.Message);
             }
         }
+
+
+        // Endpoint para solicitar redefinição de senha
+        [HttpPost("esqueceu-a-senha")]
+        public async Task<IActionResult> SolicitarRedefinicaoSenha([FromBody] RedefinirSenha redefinirSenha)
+        {
+            try
+            {
+
+                // Validar e-mail
+                redefinirSenha.ValidaDadosEntrada();
+
+                // Verifica se existe um usuário com o e-mail fornecido
+                var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.email == redefinirSenha.email);
+
+                if (user == null)
+                    return BadRequest("Usuário não encontrado.");
+
+                // Gerar um token de redefinição de senha
+                var token = TokenGenerator.GenerateToken();
+
+                // Define a data de expiração do token
+                var expiration = DateTime.UtcNow.AddHours(1); // Válido por 1 hora
+
+                // Usar injeção de dependência para o serviço de token
+                var tokenService = new SaveTokenToDataBase(_db);
+
+                // Salvar token no banco de dados, associado ao usuário
+                await tokenService.SaveTokenToDatabaseAsync(redefinirSenha.email, token, expiration);
+
+                // Enviar o e-mail com o link de email
+                await _emailService.SendPasswordResetEmailAsync(redefinirSenha.email, token);
+
+                return Ok("Instruções para redefinir a senha foram enviadas por e-mail.");
+            }
+            catch (Exception error)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar atualizar usuário: " + error.Message);
+            }
+        }
+
     }
 }

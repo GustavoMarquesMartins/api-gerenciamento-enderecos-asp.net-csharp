@@ -11,9 +11,9 @@ namespace GerenciamentoDeEndereco.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long id { get; set; }
 
-        public string nomeCompleto{ get; set; }
+        public string nomeCompleto { get; set; }
 
-        public string nomeUsuario{ get; set; }
+        public string email { get; set; }
 
         public string senha { get; set; }
 
