@@ -47,11 +47,6 @@ namespace GerenciamentoDeEndereco.Controllers
                     .Where(e => e.usuarioId == getCurrentUser().id)
                     .ToListAsync();
 
-                if (listaEnderecos == null || listaEnderecos.Count == 0)
-                {
-                    return NotFound("Nenhum endereço encontrado.");
-                }
-
                 var listaEnderecosResponse = listaEnderecos
                     .Select(endereco => _mapper.Map<EnderecoResponse>(endereco))
                     .ToList();

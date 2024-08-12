@@ -1,10 +1,14 @@
-﻿using MailKit.Net.Smtp;
+﻿using Azure.Core;
+using MailKit.Net.Smtp;
 using MimeKit;
+using System;
+using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace GerenciamentoDeEndereco.Infra
 {
-    public class EmailService : IEmailService
+    public class EmailService
     {
         private readonly string _smtpEmail; // Variável para armazenar o e-mail SMTP
         private readonly string _smtpPassword; // Variável para armazenar a senha SMTP
@@ -18,19 +22,22 @@ namespace GerenciamentoDeEndereco.Infra
 
         public async Task SendPasswordResetEmailAsync(string email, string tokenRedefinicaoSenha)
         {
-            if (string.IsNullOrEmpty(email))
-                throw new ArgumentException("Email cannot be null or empty.", nameof(email));
-            if (string.IsNullOrEmpty(tokenRedefinicaoSenha))
-                throw new ArgumentException("Token cannot be null or empty.", nameof(tokenRedefinicaoSenha));
+            string htmlTemplate = await LerConteudoHtmlAsync("./assets/HTML/PasswordResetEmail.html");
+            string urlRedefinicaoSenha = "http://127.0.0.1:5501/redefinir-senha.html?token=" + HttpUtility.UrlEncode(tokenRedefinicaoSenha);
+
+            var htmlMessage = htmlTemplate
+                .Replace("{{ResetLink}}", urlRedefinicaoSenha)
+                .Replace("{{UserName}}", "Nome do Usuário"); 
+
 
             var message = new MimeMessage
             {
                 From = { new MailboxAddress("Equipe de Suporte", _smtpEmail) },
                 To = { new MailboxAddress("Cliente", email) },
                 Subject = "Redefinição de senha",
-                Body = new TextPart("plain")
+                Body = new TextPart("html")
                 {
-                    Text = $"Acesse o link para modificação de senha: {tokenRedefinicaoSenha}" // Inclua o token no corpo do e-mail
+                    Text = htmlMessage
                 }
             };
 
@@ -44,12 +51,21 @@ namespace GerenciamentoDeEndereco.Infra
             catch (Exception ex)
             {
                 // Log o erro de forma apropriada (em vez de apenas escrever no console)
-                // Por exemplo: _logger.LogError($"Erro ao enviar e-mail: {ex.Message}");
                 Console.WriteLine($"Erro ao enviar e-mail: {ex.Message}");
             }
             finally
             {
                 await client.DisconnectAsync(true);
+            }
+        }
+        public async Task<string> LerConteudoHtmlAsync(string caminhoDoArquivo)
+        {
+            // Abre o arquivo para leitura
+            using (var fileStream = new FileStream(caminhoDoArquivo, FileMode.Open, FileAccess.Read))
+            using (var reader = new StreamReader(fileStream))
+            {
+                // Lê o conteúdo do arquivo e retorna como uma string
+                return await reader.ReadToEndAsync();
             }
         }
     }

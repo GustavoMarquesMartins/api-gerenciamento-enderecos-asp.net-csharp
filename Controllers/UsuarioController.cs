@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using System.Text.RegularExpressions;
 
 namespace GerenciamentoDeEndereco.Controllers
 {
@@ -19,17 +18,17 @@ namespace GerenciamentoDeEndereco.Controllers
     {
         private readonly UserDbContext _db; // Contexto do banco de dados
         private readonly IMapper _mapper; // Serviço de mapeamento DTO
-        private readonly IEmailService _emailService;
+        private readonly EmailService _emailService; // Serviço de envio de e-mail
 
         // Construtor para injeção de dependências
-        public UsuarioController(UserDbContext db, IMapper mapper, IEmailService emailService)
+        public UsuarioController(UserDbContext db, IMapper mapper, EmailService emailService)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db)); // Garante que o contexto do banco de dados não seja nulo
-            _mapper = mapper;
-            _emailService = emailService;
-
+            _mapper = mapper; // Inicializa o serviço de mapeamento
+            _emailService = emailService; // Inicializa o serviço de e-mail
         }
 
+        // Método para obter o usuário autenticado atual
         [NonAction]
         public async Task<Usuario> getCurrentUser()
         {
@@ -66,6 +65,24 @@ namespace GerenciamentoDeEndereco.Controllers
             return usuario;
         }
 
+        // Método para verificar a validade do token de redefinição de senha
+        [NonAction]
+        private async Task<PasswordResetToken> verificaValidadeToken(string token)
+        {
+            // Valida a presença do token
+            if (token.IsNullOrEmpty()) throw new ArgumentNullException("Token não pode ser um campo em branco.");
+
+            // Verifica se o token consta no banco de dados
+            var relacionamentoUsuarioToken = _db.PasswordResetTokens.FirstOrDefault(u => u.token == token);
+            if (relacionamentoUsuarioToken == null) throw new Exception("Token inválido");
+
+            // Verifica a validade do token
+            if (relacionamentoUsuarioToken.expiration < DateTime.Now) throw new Exception("Token expirado. Favor fazer a solicitação novamente!");
+
+            return relacionamentoUsuarioToken;
+        }
+
+        // Endpoint para obter os dados do usuário atual
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Get()
@@ -88,6 +105,7 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
+        // Endpoint para criar um novo usuário
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Post(UsuarioDTO DTO)
@@ -115,6 +133,7 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
+        // Endpoint para deletar um usuário
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(long id)
@@ -148,6 +167,7 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
+        // Endpoint para atualizar os dados de um usuário
         [HttpPut("{id}")]
         [Authorize]
         public async Task<IActionResult> Put(long id, [FromBody] UsuarioEdicaoDTO dadosNovos)
@@ -184,26 +204,24 @@ namespace GerenciamentoDeEndereco.Controllers
             }
         }
 
-        [HttpPut("{token}")]
-        [Authorize]
-        public async Task<IActionResult> redefinirSenha(string token, [FromBody] NovaSenha dados)
+        // Endpoint para validar o token de redefinição de senha e redefinir a senha do usuário
+        [HttpPost("valida-token-redefinicao")]
+        public async Task<IActionResult> redefinirSenha([FromBody] NovaSenha dados)
         {
             try
             {
+                // Valida os dados de entrada
                 dados.validaDadosEntrada();
 
-                // Valida token de recuperação
-                if (!token.IsNullOrEmpty()) return BadRequest("Token não incluso na requisição.");
+                // Valida se o token é válido
+                var relacionamento = await verificaValidadeToken(dados.token);
 
-                var tokenRedefinicaoSenha = await _db.PasswordResetTokens.FindAsync(token);
+                // Obtém o usuário associado ao token
+                Usuario usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.email == relacionamento.email);
 
-                if (!token.IsNullOrEmpty()) return BadRequest("Token inválido.");
-
-                string padrao = @"^(?=.*[A-Z])(?=.*[^\w\s]).+$";
-                if (!Regex.IsMatch(dados.novaSenha, padrao) || dados.novaSenha.Length < 6) throw new Exception("Senha invalida");
-
-                // Obtém o usuário atual
-                Usuario usuario = await getCurrentUser();
+                // Verifica se a senha antiga fornecida é correta e se a nova senha é diferente da antiga
+                if (usuario.senha != dados.senhaAntiga) throw new Exception("senha antiga incorreta!");
+                if (usuario.senha == dados.novaSenha) throw new Exception("A nova senha tem que ser diferente da senha antiga");
 
                 // Atualiza a senha do usuário
                 usuario.senha = dados.novaSenha;
@@ -219,10 +237,9 @@ namespace GerenciamentoDeEndereco.Controllers
             catch (Exception ex)
             {
                 // Retorna um erro interno se ocorrer uma exceção
-                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar atualizar usuário : " + ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar atualizar senha : " + ex.Message);
             }
         }
-
 
         // Endpoint para solicitar redefinição de senha
         [HttpPost("esqueceu-a-senha")]
@@ -230,36 +247,40 @@ namespace GerenciamentoDeEndereco.Controllers
         {
             try
             {
-
-                // Validar e-mail
+                // Valida o e-mail fornecido
                 redefinirSenha.ValidaDadosEntrada();
 
                 // Verifica se existe um usuário com o e-mail fornecido
                 var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.email == redefinirSenha.email);
 
                 if (user == null)
-                    return BadRequest("Usuário não encontrado.");
+                    return NotFound("Usuário não encontrado.");
 
-                // Gerar um token de redefinição de senha
+                // Gera um token de redefinição de senha
                 var token = TokenGenerator.GenerateToken();
 
                 // Define a data de expiração do token
                 var expiration = DateTime.UtcNow.AddHours(1); // Válido por 1 hora
 
-                // Usar injeção de dependência para o serviço de token
-                var tokenService = new SaveTokenToDataBase(_db);
+                var tokenService = new PasswordResetToken()
+                    .setToken(token)
+                    .setEmail(redefinirSenha.email)
+                    .setExpiration(expiration);
 
-                // Salvar token no banco de dados, associado ao usuário
-                await tokenService.SaveTokenToDatabaseAsync(redefinirSenha.email, token, expiration);
+                // Adiciona o token de redefinição ao banco de dados
+                await _db.PasswordResetTokens.AddAsync(tokenService);
+                await _db.SaveChangesAsync();
 
-                // Enviar o e-mail com o link de email
+                // Envia o e-mail com o link para redefinir a senha
                 await _emailService.SendPasswordResetEmailAsync(redefinirSenha.email, token);
 
+                // Retorna uma resposta de sucesso
                 return Ok("Instruções para redefinir a senha foram enviadas por e-mail.");
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar atualizar usuário: " + error.Message);
+                // Retorna um erro interno se ocorrer uma exceção
+                return StatusCode(StatusCodes.Status500InternalServerError, "Erro interno ao tentar solicitar alteração de senha: " + error.Message);
             }
         }
 

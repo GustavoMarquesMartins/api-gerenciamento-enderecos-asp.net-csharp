@@ -8,9 +8,6 @@ namespace GerenciamentoDeEndereco.DTO
         [Required]
         public string email { get; set; }
 
-        // Construtor padrão necessário para a deserialização
-        public RedefinirSenha() { }
-
         // Validação do e-mail
         public void ValidaDadosEntrada()
         {
@@ -19,7 +16,7 @@ namespace GerenciamentoDeEndereco.DTO
                 string padrao = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
                 if (!Regex.IsMatch(email, padrao))
                 {
-                    throw new ArgumentException("O campo e-mail é inválido.");
+                    throw new ArgumentException("O campo e-mail não corresponde ao padrão esperado.");
                 }
             }
         }

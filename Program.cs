@@ -47,8 +47,10 @@ builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseMySql(mySqlConnectionString, ServerVersion.AutoDetect(mySqlConnectionString));
 });
 
-builder.Services.AddSingleton<IEmailService>(sp =>
-    new EmailService(smtpEmail, smtpPassword));
+builder.Services.AddSingleton<EmailService>(sp =>
+{
+    return new EmailService(smtpEmail, smtpPassword);
+});
 
 builder.Services.AddAuthorization(options =>
 {
@@ -101,5 +103,7 @@ app.MapControllers(); // Mapeia os controladores para o pipeline de requisição
 
 // Adiciona o middleware customizado JwtAuthenticationMiddleware ao pipeline
 app.UseMiddleware<JwtAuthenticationMiddleware>(secretKey);
+
+app.UseStaticFiles(); // Permite que a aplicação ultilze de arquivos estáticos
 
 app.Run(); // Executa a aplicação

@@ -5,7 +5,7 @@ namespace GerenciamentoDeEndereco.DTO
     public class LoginDTO
     {
         [Required]
-        public string usuario { get; set; }
+        public string email { get; set; }
         [Required]
         public string senha { get; set; }
 

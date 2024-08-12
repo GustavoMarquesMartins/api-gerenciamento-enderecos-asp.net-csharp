@@ -29,10 +29,10 @@ namespace GerenciamentoDeEndereco.Controllers
         {
             try
             {
-                var sqlQuery = "SELECT * FROM Usuarios WHERE nomeUsuario = @Usuario AND senha = @Senha";
+                var sqlQuery = "SELECT * FROM Usuarios WHERE email = @Usuario AND senha = @Senha";
 
                 var user = await _db.Usuarios.FromSqlRaw(sqlQuery,
-                new MySqlParameter("@Usuario", login.usuario),
+                new MySqlParameter("@Usuario", login.email),
                 new MySqlParameter("@Senha", login.senha)
            ).FirstOrDefaultAsync();
 
