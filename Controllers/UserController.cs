@@ -20,7 +20,7 @@ namespace GerenciamentoDeEndereco.Controllers
         private readonly CommonService _commonService;
         private readonly EmailService _emailService;
 
-        public UserController(UserService usuarioService, CommonService commonService, EmailService emailService, TranslatorService translatorService)
+        public UserController(UserService usuarioService, CommonService commonService, EmailService emailService)
         {
             _userService = usuarioService ?? throw new ArgumentNullException(nameof(usuarioService));
             _commonService = commonService ?? throw new ArgumentNullException(nameof(CommonService));
