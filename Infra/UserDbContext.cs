@@ -10,8 +10,8 @@ namespace GerenciamentoDeEndereco.Infra
     {
         private readonly IConfiguration _configuration;
 
-        public DbSet<Usuario> Usuarios { get; set; }
-        public DbSet<Endereco> Enderecos { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Address> Addresses { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
 
@@ -19,6 +19,14 @@ namespace GerenciamentoDeEndereco.Infra
             : base(options)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Configura a entidade User para que o campo email seja único
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
         }
     }
 }

@@ -4,17 +4,17 @@ using System.ComponentModel.DataAnnotations;
 namespace GerenciamentoDeEndereco.DTO
 {
     [AllowAnonymous]
-    public class UsuarioDTO
+    public class UserDTO
     {
         [Required(ErrorMessage = "O campo nome completo não pode ficar em branco")]
-        public string nomeCompleto { get; set; }
+        public string Name { get; set; }
 
         [Required(ErrorMessage = "O campo nome e-mail não pode ficar em branco")]
-        public string email { get; set; }
+        public string Email { get; set; }
 
         [Required(ErrorMessage = "O campo senha não pode ficar em branco")]
         [MinLength(6, ErrorMessage ="A senha precisa ter um número mínimo de 6 caracteres")]
-        public string senha { get; set; }
+        public string Password { get; set; }
 
     }
 }

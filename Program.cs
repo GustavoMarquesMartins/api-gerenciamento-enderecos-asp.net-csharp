@@ -1,16 +1,20 @@
 using dotenv.net;
+using GerenciamentoDeEndereco.Controllers;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
+using GerenciamentoDeEndereco.Middlewares;
 using GerenciamentoDeEndereco.Model;
-using GerenciamentoDeEndereco.Security;
+using GerenciamentoDeEndereco.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Globalization;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,11 +51,6 @@ builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseMySql(mySqlConnectionString, ServerVersion.AutoDetect(mySqlConnectionString));
 });
 
-builder.Services.AddSingleton<EmailService>(sp =>
-{
-    return new EmailService(smtpEmail, smtpPassword);
-});
-
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
@@ -62,6 +61,13 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers(); // Adiciona serviços para controladores
 builder.Services.AddEndpointsApiExplorer(); // Adiciona serviços para API Explorer
 builder.Services.AddSwaggerGen(); // Configura o Swagger para geração de documentação
+builder.Services.AddHttpContextAccessor(); // Adiciona seriço de contexto de usuário
+//serviços
+builder.Services.AddScoped<CommonService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<AddressService>();
+builder.Services.AddScoped<AuthenticationService>();
 
 // Adiciona AutoMapper ao contêiner de injeção de dependência
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

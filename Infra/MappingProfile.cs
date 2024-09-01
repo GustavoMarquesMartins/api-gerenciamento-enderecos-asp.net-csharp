@@ -10,14 +10,14 @@ namespace GerenciamentoDeEndereco.Infra
                 public MappingProfile()
                 {
                     // Mapeamento de Usuario para UsuarioDTO e vice-versa
-                    CreateMap<Usuario, UsuarioDTO>().ReverseMap();
+                    CreateMap<User, UserDTO>().ReverseMap();
                     
-                    CreateMap<Usuario, UsuarioResponse>().ReverseMap();
+                    CreateMap<User, UserResponse>().ReverseMap();
 
                     // Mapeamento de Endereco para EnderecoDTO e vice-versa
-                    CreateMap<Endereco, EnderecoDTO>().ReverseMap();
+                    CreateMap<Address, AddressDTO>().ReverseMap();
 
-                    CreateMap<Endereco, EnderecoResponse>().ReverseMap();
+                    CreateMap<Address, AddressResponse>().ReverseMap();
                 }
         }
     }

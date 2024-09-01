@@ -5,17 +5,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GerenciamentoDeEndereco.Model
 {
-    public class Usuario
+    public class User
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public long id { get; set; }
+        public long Id { get; set; }
 
-        public string nomeCompleto { get; set; }
+        public string Name{ get; set; }
 
-        public string email { get; set; }
+        public string Email { get; set; }
 
-        public string senha { get; set; }
+        public string Password { get; set; }
 
     }
 }

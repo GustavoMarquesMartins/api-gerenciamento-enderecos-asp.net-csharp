@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
-namespace GerenciamentoDeEndereco.Security
+namespace GerenciamentoDeEndereco.Middlewares
 
 {
     public class JwtAuthenticationMiddleware
@@ -19,13 +19,13 @@ namespace GerenciamentoDeEndereco.Security
 
         public async Task Invoke(HttpContext context)
         {
-            if (context.Request.Path.StartsWithSegments("/Autenticacao") && context.Request.Method == "POST")
+            if (context.Request.Path.StartsWithSegments("/Authentication") && context.Request.Method == "POST")
             {
                 await _next(context);
                 return;
             }
 
-            if (context.Request.Path.StartsWithSegments("/Usuario") && context.Request.Method == "POST")
+            if (context.Request.Path.StartsWithSegments("/User") && context.Request.Method == "POST")
             {
                 await _next(context);
                 return;
@@ -37,7 +37,7 @@ namespace GerenciamentoDeEndereco.Security
                 await context.Response.WriteAsync("Authorization header is missing");
                 return;
             }
-            
+
             var token = authHeader.ToString().Replace("Bearer ", "");
 
             var tokenHandler = new JwtSecurityTokenHandler();

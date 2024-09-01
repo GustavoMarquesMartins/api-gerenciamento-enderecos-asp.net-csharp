@@ -4,6 +4,7 @@ using GerenciamentoDeEndereco.Infra;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GerenciamentoDeEndereco.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    partial class UserDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240824003643_update")]
+    partial class update
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,99 +25,96 @@ namespace GerenciamentoDeEndereco.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("GerenciamentoDeEndereco.Model.Address", b =>
+            modelBuilder.Entity("GerenciamentoDeEndereco.Model.Endereco", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<long>("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("id"));
 
-                    b.Property<string>("AdditionalInfo")
+                    b.Property<string>("bairro")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("City")
+                    b.Property<string>("cep")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Neighborhood")
+                    b.Property<string>("cidade")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("Number")
+                    b.Property<string>("complemento")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("logradouro")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("numero")
                         .HasColumnType("int");
 
-                    b.Property<string>("State")
+                    b.Property<string>("uf")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Street")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<long>("UserId")
+                    b.Property<long>("usuarioId")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("ZipCode")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.HasKey("id");
 
-                    b.HasKey("Id");
-
-                    b.ToTable("Addresses");
+                    b.ToTable("Enderecos");
                 });
 
             modelBuilder.Entity("GerenciamentoDeEndereco.Model.PasswordResetToken", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("id"));
 
-                    b.Property<string>("Email")
+                    b.Property<string>("email")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Expiration")
+                    b.Property<DateTime>("expiration")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Token")
+                    b.Property<string>("token")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("Id");
+                    b.HasKey("id");
 
                     b.ToTable("PasswordResetTokens");
                 });
 
-            modelBuilder.Entity("GerenciamentoDeEndereco.Model.User", b =>
+            modelBuilder.Entity("GerenciamentoDeEndereco.Model.Usuario", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<long>("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("id"));
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("email")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Password")
+                    b.Property<string>("nomeCompleto")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("Id");
+                    b.Property<string>("senha")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
+                    b.HasKey("id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Usuarios");
                 });
 #pragma warning restore 612, 618
         }
