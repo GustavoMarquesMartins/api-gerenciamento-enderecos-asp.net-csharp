@@ -14,6 +14,12 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# Ignore the Migrations directory
+Migrations/
+
+# Ignore any .env file regardless of its location
+**/.env
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
