@@ -4,19 +4,28 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 namespace GerenciamentoDeEndereco.Middlewares
-
 {
     public class JwtAuthenticationMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly string _key;
 
+        /// <summary>
+        /// Constructor that initializes the JWT authentication middleware with dependencies.
+        /// </summary>
+        /// <param name="next">The next middleware delegate</param>
+        /// <param name="key">Secret key for JWT validation</param>
         public JwtAuthenticationMiddleware(RequestDelegate next, string key)
         {
             _next = next;
             _key = key;
         }
 
+        /// <summary>
+        /// Middleware invocation to handle JWT authentication.
+        /// </summary>
+        /// <param name="context">HTTP context</param>
+        /// <returns>Task representing the asynchronous operation</returns>
         public async Task Invoke(HttpContext context)
         {
             if (context.Request.Path.StartsWithSegments("/Authentication") && context.Request.Method == "POST")

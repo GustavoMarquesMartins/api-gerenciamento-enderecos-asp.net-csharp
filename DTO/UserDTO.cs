@@ -4,17 +4,28 @@ using System.ComponentModel.DataAnnotations;
 namespace GerenciamentoDeEndereco.DTO
 {
     [AllowAnonymous]
+    /// <summary>
+    /// Data Transfer Object for creating a new user.
+    /// </summary>
     public class UserDTO
     {
-        [Required(ErrorMessage = "O campo nome completo não pode ficar em branco")]
+        /// <summary>
+        /// Gets or sets the user name.
+        /// </summary>
+        [Required(ErrorMessage = "The full name field cannot be blank")]
         public string Name { get; set; }
 
-        [Required(ErrorMessage = "O campo nome e-mail não pode ficar em branco")]
+        /// <summary>
+        /// Gets or sets the user email.
+        /// </summary>
+        [Required(ErrorMessage = "The email field cannot be blank")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "O campo senha não pode ficar em branco")]
-        [MinLength(6, ErrorMessage ="A senha precisa ter um número mínimo de 6 caracteres")]
+        /// <summary>
+        /// Gets or sets the user password.
+        /// </summary>
+        [Required(ErrorMessage = "The password field cannot be blank")]
+        [MinLength(6, ErrorMessage = "The password must have a minimum length of 6 characters")]
         public string Password { get; set; }
-
     }
 }

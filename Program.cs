@@ -19,16 +19,16 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Carrega o arquivo .env
+// Loads the .env file
 DotEnv.Load();
 
-// Configura o arquivo appsettings.json
+// Configures the appsettings.json file
 builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
-// Configura variáveis de ambiente
+// Configures environment variables
 builder.Configuration.AddEnvironmentVariables();
 
-// Recupera variáveis de ambiente e configurações
+// Retrieves environment variables and settings
 var smtpEmail = builder.Configuration["SMTP_EMAIL"];
 var smtpPassword = builder.Configuration["SMTP_PASSWORD"];
 var secretKey = builder.Configuration["CHAVE_SECRETA_APLICACAO"];
@@ -38,15 +38,15 @@ var dbName = builder.Configuration["DATABASE_NAME"];
 var dbUser = builder.Configuration["DATABASE_USER"];
 var dbPassword = builder.Configuration["DATABASE_PASSWORD"];
 
-// Construa a string de conexão do banco de dados
+// Builds the database connection string
 var mySqlConnectionString = $"Server={dbHost};Port={dbPort};Database={dbName};User={dbUser};Password={dbPassword};";
 
-// Configura os serviços
+// Configures services
 builder.Services.AddDbContext<UserDbContext>(options =>
 {
     if (string.IsNullOrEmpty(mySqlConnectionString))
     {
-        throw new InvalidOperationException("A string de conexão do MySqlConnection não foi encontrada.");
+        throw new InvalidOperationException("The MySqlConnection connection string was not found.");
     }
     options.UseMySql(mySqlConnectionString, ServerVersion.AutoDetect(mySqlConnectionString));
 });
@@ -57,25 +57,25 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User"));
 });
 
-// Adiciona serviços ao contêiner de injeção de dependência
-builder.Services.AddControllers(); // Adiciona serviços para controladores
-builder.Services.AddEndpointsApiExplorer(); // Adiciona serviços para API Explorer
-builder.Services.AddSwaggerGen(); // Configura o Swagger para geração de documentação
-builder.Services.AddHttpContextAccessor(); // Adiciona seriço de contexto de usuário
-//serviços
+// Adds services to the dependency injection container
+builder.Services.AddControllers(); // Adds services for controllers
+builder.Services.AddEndpointsApiExplorer(); // Adds services for API Explorer
+builder.Services.AddSwaggerGen(); // Configures Swagger for API documentation
+builder.Services.AddHttpContextAccessor(); // Adds user context service
+
+// Services
 builder.Services.AddScoped<CommonService>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AddressService>();
 builder.Services.AddScoped<AuthenticationService>();
 
-// Adiciona AutoMapper ao contêiner de injeção de dependência
+// Adds AutoMapper to the dependency injection container
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// Registra o serviço JwtService com a chave secreta
+// Registers the JwtService with the secret key
 builder.Services.AddScoped<JwtService>(sp => new JwtService(secretKey));
 
-// Configuração do CORS para permitir requisições de qualquer origem, método e cabeçalho
+// Configures CORS to allow requests from any origin, method, and header
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhost",
@@ -89,27 +89,27 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configuração do pipeline de requisição HTTP
+// Configures the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage(); // Exibe página de erro detalhada em ambiente de desenvolvimento
-    app.UseSwagger(); // Configura o uso do Swagger para documentação da API
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MeuProjeto v1")); // Configura a UI do Swagger
+    app.UseDeveloperExceptionPage(); // Displays detailed error page in development environment
+    app.UseSwagger(); // Configures Swagger for API documentation
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyProject v1")); // Configures Swagger UI
 }
 
-app.UseHttpsRedirection(); // Redireciona requisições HTTP para HTTPS
+app.UseHttpsRedirection(); // Redirects HTTP requests to HTTPS
 
-app.UseAuthentication(); // Middleware de autenticação deve vir antes do middleware de autorização
+app.UseAuthentication(); // Authentication middleware must come before authorization middleware
 app.UseAuthorization();
 
-// Aplica a política CORS configurada ao pipeline
+// Applies the configured CORS policy to the pipeline
 app.UseCors("AllowLocalhost");
 
-app.MapControllers(); // Mapeia os controladores para o pipeline de requisição
+app.MapControllers(); // Maps controllers to the request pipeline
 
-// Adiciona o middleware customizado JwtAuthenticationMiddleware ao pipeline
+// Adds the custom JwtAuthenticationMiddleware to the pipeline
 app.UseMiddleware<JwtAuthenticationMiddleware>(secretKey);
 
-app.UseStaticFiles(); // Permite que a aplicação ultilze de arquivos estáticos
+app.UseStaticFiles(); // Allows the application to use static files
 
-app.Run(); // Executa a aplicação
+app.Run(); // Runs the application

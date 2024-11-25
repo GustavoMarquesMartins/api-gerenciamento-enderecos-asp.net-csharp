@@ -8,32 +8,42 @@ namespace GerenciamentoDeEndereco.Service
 {
     public class AuthenticationService
     {
-
         private readonly UserDbContext _db;
         private readonly JwtService _jwtService;
 
+        /// <summary>
+        /// Constructor that initializes the AuthenticationService with dependencies.
+        /// </summary>
+        /// <param name="db">User database context</param>
+        /// <param name="jwtService">Service for generating JWT tokens</param>
         public AuthenticationService(UserDbContext db, JwtService jwtService)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
             _jwtService = jwtService;
         }
 
-        public async Task<String> post([FromBody] LoginDTO dto)
+        /// <summary>
+        /// Authenticates a user with provided credentials and generates a JWT token.
+        /// </summary>
+        /// <param name="dto">Login Data Transfer Object containing user credentials</param>
+        /// <returns>JWT token as a string</returns>
+        /// <exception cref="Exception">Thrown when user is not found</exception>
+        public async Task<string> Post([FromBody] LoginDTO dto)
         {
-                var sqlQuery = "SELECT * FROM Users WHERE email = @Email AND password = @Password";
+            var sqlQuery = "SELECT * FROM Users WHERE email = @Email AND password = @Password";
 
-                var user = await _db.Users.FromSqlRaw(sqlQuery,
+            var user = await _db.Users.FromSqlRaw(sqlQuery,
                 new MySqlParameter("@Email", dto.Email),
                 new MySqlParameter("@Password", dto.Password)
-                ).FirstOrDefaultAsync();
+            ).FirstOrDefaultAsync();
 
-                if (user != null)
-                {
-                    var token = _jwtService.GenerateToken(user.Id.ToString());
-                    return token;
-                }
-                
-            throw new Exception("Usuário não encontrado");
+            if (user != null)
+            {
+                var token = _jwtService.GenerateToken(user.Id.ToString());
+                return token;
+            }
+
+            throw new Exception("User not found");
         }
     }
 }

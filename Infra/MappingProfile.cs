@@ -4,20 +4,25 @@ using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Response;
 
 namespace GerenciamentoDeEndereco.Infra
-    { 
-        public class MappingProfile : Profile
+{
+    public class MappingProfile : Profile
+    {
+        /// <summary>
+        /// Constructor that initializes the mapping profiles.
+        /// </summary>
+        public MappingProfile()
         {
-                public MappingProfile()
-                {
-                    // Mapeamento de Usuario para UsuarioDTO e vice-versa
-                    CreateMap<User, UserDTO>().ReverseMap();
-                    
-                    CreateMap<User, UserResponse>().ReverseMap();
+            // Mapping from User to UserDTO and vice versa
+            CreateMap<User, UserDTO>().ReverseMap();
 
-                    // Mapeamento de Endereco para EnderecoDTO e vice-versa
-                    CreateMap<Address, AddressDTO>().ReverseMap();
+            // Mapping from User to UserResponse and vice versa
+            CreateMap<User, UserResponse>().ReverseMap();
 
-                    CreateMap<Address, AddressResponse>().ReverseMap();
-                }
+            // Mapping from Address to AddressDTO and vice versa
+            CreateMap<Address, AddressDTO>().ReverseMap();
+
+            // Mapping from Address to AddressResponse and vice versa
+            CreateMap<Address, AddressResponse>().ReverseMap();
         }
     }
+}
