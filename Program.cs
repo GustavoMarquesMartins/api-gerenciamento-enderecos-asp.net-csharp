@@ -1,8 +1,9 @@
+using AddressManagement.Infra;
+using AddressManagement.Middlewares;
+using AddressManagement.Service;
 using dotenv.net;
-using GerenciamentoDeEndereco.Controllers;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
-using GerenciamentoDeEndereco.Middlewares;
 using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -30,13 +31,14 @@ builder.Configuration.AddEnvironmentVariables();
 
 // Retrieves environment variables and settings
 var smtpEmail = builder.Configuration["SMTP_EMAIL"];
-var smtpPassword = builder.Configuration["SMTP_PASSWORD"];
+var smtpAppPassword = builder.Configuration["SMTP_APP_PASSWORD"];
 var secretKey = builder.Configuration["CHAVE_SECRETA_APLICACAO"];
 var dbHost = builder.Configuration["DATABASE_HOST"];
 var dbPort = builder.Configuration["DATABASE_PORT"];
 var dbName = builder.Configuration["DATABASE_NAME"];
 var dbUser = builder.Configuration["DATABASE_USER"];
 var dbPassword = builder.Configuration["DATABASE_PASSWORD"];
+var passwordResetApiUrl = builder.Configuration["PASSWORD_RESET_API_URL"];
 
 // Builds the database connection string
 var mySqlConnectionString = $"Server={dbHost};Port={dbPort};Database={dbName};User={dbUser};Password={dbPassword};";
@@ -49,6 +51,10 @@ builder.Services.AddDbContext<UserDbContext>(options =>
         throw new InvalidOperationException("The MySqlConnection connection string was not found.");
     }
     options.UseMySql(mySqlConnectionString, ServerVersion.AutoDetect(mySqlConnectionString));
+});
+
+builder.Services.AddScoped<EmailSettings>(config => {
+    return new EmailSettings(passwordResetApiUrl, smtpEmail, smtpAppPassword);
 });
 
 builder.Services.AddAuthorization(options =>
@@ -68,6 +74,14 @@ builder.Services.AddScoped<CommonService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AddressService>();
 builder.Services.AddScoped<AuthenticationService>();
+
+builder.Services.AddScoped<PasswordResetService>(provider =>
+{
+    var context = provider.GetRequiredService<UserDbContext>();
+    var emailSettings = provider.GetRequiredService<EmailSettings>();
+    var userService = provider.GetRequiredService<UserService>();
+    return new PasswordResetService(context, emailSettings, userService);
+});
 
 // Adds AutoMapper to the dependency injection container
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

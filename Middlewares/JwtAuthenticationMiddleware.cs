@@ -1,10 +1,15 @@
-﻿using Microsoft.Extensions.Primitives;
+﻿using AddressManagement.Middlewares;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
-namespace GerenciamentoDeEndereco.Middlewares
+namespace AddressManagement.Middlewares
 {
+    /// <summary>
+    /// Middleware class for handling JWT authentication.
+    /// </summary>
     public class JwtAuthenticationMiddleware
     {
         private readonly RequestDelegate _next;
@@ -28,25 +33,22 @@ namespace GerenciamentoDeEndereco.Middlewares
         /// <returns>Task representing the asynchronous operation</returns>
         public async Task Invoke(HttpContext context)
         {
-            if (context.Request.Path.StartsWithSegments("/Authentication") && context.Request.Method == "POST")
+            // Skip JWT validation for specific endpoints and HTTP methods
+            if (PathSettings.IsExcludedPath(context))
             {
                 await _next(context);
                 return;
             }
 
-            if (context.Request.Path.StartsWithSegments("/User") && context.Request.Method == "POST")
-            {
-                await _next(context);
-                return;
-            }
-
+            // Check if the Authorization header is present
             if (!context.Request.Headers.TryGetValue("Authorization", out StringValues authHeader))
             {
-                context.Response.StatusCode = 401;
+                context.Response.StatusCode = 401; // Unauthorized
                 await context.Response.WriteAsync("Authorization header is missing");
                 return;
             }
 
+            // Extract the token from the Authorization header
             var token = authHeader.ToString().Replace("Bearer ", "");
 
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -56,21 +58,23 @@ namespace GerenciamentoDeEndereco.Middlewares
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_key)),
                 ValidateIssuer = false,
                 ValidateAudience = false,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero // No clock skew to allow for precise token expiry validation
             };
 
             try
             {
+                // Validate the token and set the principal in the context
                 var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
                 context.User = principal;
             }
             catch (Exception ex)
             {
-                context.Response.StatusCode = 401;
+                context.Response.StatusCode = 401; // Unauthorized
                 await context.Response.WriteAsync("Invalid token: " + ex.Message);
                 return;
             }
 
+            // Call the next middleware in the pipeline
             await _next(context);
         }
     }

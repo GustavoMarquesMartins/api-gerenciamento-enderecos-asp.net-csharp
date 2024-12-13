@@ -1,16 +1,17 @@
-﻿using AutoMapper;
+﻿using System.Reflection.Metadata.Ecma335;
+using AddressManagement.DTO;
+using AddressManagement.Service;
 using GerenciamentoDeEndereco.DTO;
-using GerenciamentoDeEndereco.Infra;
-using GerenciamentoDeEndereco.Model;
-using GerenciamentoDeEndereco.Response;
 using GerenciamentoDeEndereco.Service;
+using GerenciamentoDeEndereco.Validators;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
-namespace GerenciamentoDeEndereco.Controllers
+namespace AddressManagement.Controllers
 {
+    /// <summary>
+    /// Controller for user-related operations.
+    /// </summary>
     [ApiController]
     [Route("/[controller]")]
     [AllowAnonymous]
@@ -18,18 +19,20 @@ namespace GerenciamentoDeEndereco.Controllers
     {
         private readonly UserService _userService;
         private readonly CommonService _commonService;
+        private readonly PasswordResetService _passwordResetService;
 
         /// <summary>
         /// Constructor that initializes the UserController with dependencies.
         /// </summary>
         /// <param name="userService">Service for user operations</param>
         /// <param name="commonService">Common service for shared functionalities</param>
-        /// <param name="emailService">Service for email operations</param>
+        /// <param name="passwordResetService">Service for password reset operations</param>
         /// <exception cref="ArgumentNullException">Thrown when a dependency is null</exception>
-        public UserController(UserService userService, CommonService commonService)
+        public UserController(UserService userService, CommonService commonService, PasswordResetService passwordResetService)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-            _commonService = commonService ?? throw new ArgumentNullException(nameof(CommonService));
+            _commonService = commonService ?? throw new ArgumentNullException(nameof(commonService));
+            _passwordResetService = passwordResetService ?? throw new ArgumentNullException(nameof(passwordResetService));
         }
 
         /// <summary>
@@ -62,7 +65,7 @@ namespace GerenciamentoDeEndereco.Controllers
             try
             {
                 var userResponse = await _userService.Post(dto);
-                Uri uri = await _commonService.GetUri(this, "");
+                Uri uri = _commonService.GetUri(this, "");
 
                 return Created(uri, userResponse);
             }
@@ -108,6 +111,64 @@ namespace GerenciamentoDeEndereco.Controllers
             catch (Exception error)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Internal error updating user: " + error.Message);
+            }
+        }
+
+        /// <summary>
+        /// Initiates the process to send a password reset email.
+        /// </summary>
+        /// <param name="dto">The data transfer object containing the email address.</param>
+        /// <returns>An IActionResult indicating the result of the operation.</returns>
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> Get([FromBody] PasswordResetRequestDTO dto)
+        {
+            try
+            {
+                // Initiate the email dispatch process with the provided email address
+                await _passwordResetService.InitializeEmailDispatch(dto.Email);
+                return Ok();
+            }
+            catch (Exception error)
+            {
+                // Return a 500 Internal Server Error response with the error message
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error when sending email: " + error.Message);
+            }
+        }
+
+        /// <summary>
+        /// Validates the password reset code.
+        /// </summary>
+        /// <param name="requestCode">The data transfer object containing the reset code.</param>
+        /// <returns>An IActionResult containing the validation token.</returns>
+        [HttpPost("validate-code")]
+        public async Task<IActionResult> ValidatePasswordRequestCode([FromBody] PasswordRequestCodeDTO requestCode)
+        {
+            var code = requestCode.Code;
+            ValidateInputDataAuthentication.Code(code);
+            var token = await _passwordResetService.VerifyCodeValidityAsync(code);
+            return Ok(token);
+        }
+
+        /// <summary>
+        /// Resets the user's password using the provided token and new password.
+        /// </summary>
+        /// <param name="dto">The data transfer object containing the token, new password, and confirmation of the new password.</param>
+        /// <returns>An IActionResult indicating the result of the operation.</returns>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] PasswordChangeRequestDTO dto)
+        {
+            try
+            {
+                // Validate the input data contained in the DTO
+                dto.ValidateData();
+                // Update the user's password with the provided token and new password
+                await _passwordResetService.UpdateUserPasswordAsync(dto.Token, dto.NewPassword, dto.NewPasswordConfirm);
+                return Ok("Password updated successfully.");
+            }
+            catch (Exception error)
+            {
+                // Return a 500 Internal Server Error response with the error message
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error when trying to update password: " + error.Message);
             }
         }
     }

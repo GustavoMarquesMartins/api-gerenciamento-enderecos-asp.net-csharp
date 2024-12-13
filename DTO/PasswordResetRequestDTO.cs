@@ -4,9 +4,9 @@ using GerenciamentoDeEndereco.Validators;
 namespace GerenciamentoDeEndereco.DTO
 {
     /// <summary>
-    /// Data Transfer Object for user login.
+    /// Data Transfer Object for password reset request.
     /// </summary>
-    public class LoginDTO
+    public class PasswordResetRequestDTO
     {
         /// <summary>
         /// Gets or sets the user email.
@@ -15,22 +15,13 @@ namespace GerenciamentoDeEndereco.DTO
         public string Email { get; set; }
 
         /// <summary>
-        /// Gets or sets the user password.
-        /// </summary>
-        [Required(ErrorMessage = "The password field is required.")]
-        public string Password { get; set; }
-
-        /// <summary>
-        /// Validates the input data for the login.
-        /// This method ensures that the email and password adhere to specified validation rules.
+        /// Validates the input data for the password reset request.
+        /// This method ensures that the email adheres to specified validation rules.
         /// </summary>
         public void ValidateData()
         {
             // Validate the email format using custom validation logic
             ValidateInputDataUser.Email(Email);
-
-            // Validate the password strength and format using custom validation logic
-            ValidateInputDataUser.Password(Password);
         }
     }
 }

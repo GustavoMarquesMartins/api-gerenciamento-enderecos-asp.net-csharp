@@ -1,9 +1,12 @@
-﻿using GerenciamentoDeEndereco.Model;
+﻿using AddressManagement.Model;
+using GerenciamentoDeEndereco.Model;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
-namespace GerenciamentoDeEndereco.Infra
+namespace AddressManagement.Infra
 {
+    /// <summary>
+    /// DbContext class for managing user and address data.
+    /// </summary>
     public class UserDbContext : DbContext
     {
         private readonly IConfiguration _configuration;
@@ -17,6 +20,11 @@ namespace GerenciamentoDeEndereco.Infra
         /// Gets or sets the Addresses DbSet.
         /// </summary>
         public DbSet<Address> Addresses { get; set; }
+
+        /// <summary>
+        /// Gets or sets the PasswordResetTokens DbSet.
+        /// </summary>
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         /// <summary>
         /// Constructor that initializes the UserDbContext with configuration and options.
@@ -40,6 +48,18 @@ namespace GerenciamentoDeEndereco.Infra
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasOne(prt => prt.User)
+                .WithMany(u => u.PasswordResetTokens)
+                .HasForeignKey(prt => prt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasIndex(u => u.VerificationCode)
+                .IsUnique();
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

@@ -1,10 +1,14 @@
-﻿using GerenciamentoDeEndereco.DTO;
+﻿using AddressManagement.Service;
+using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GerenciamentoDeEndereco.Controllers
+namespace AddressManagement.Controllers
 {
+    /// <summary>
+    /// Controller for authentication-related operations.
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class Authentication : ControllerBase

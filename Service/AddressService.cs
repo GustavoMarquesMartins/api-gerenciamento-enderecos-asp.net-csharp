@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using AddressManagement.Infra;
+using AddressManagement.Service;
+using AutoMapper;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
@@ -7,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GerenciamentoDeEndereco.Service
 {
+    /// <summary>
+    /// Service class for managing address-related operations.
+    /// </summary>
     public class AddressService
     {
         private readonly UserDbContext _db;
@@ -111,7 +116,7 @@ namespace GerenciamentoDeEndereco.Service
         /// <exception cref="Exception">Thrown when address is not found or does not belong to the user</exception>
         public async Task<AddressResponse> Put(long id, AddressUpdateDTO dto)
         {
-            dto.ValidateDate();
+            dto.ValidateData();
             var currentUser = await _commonService.GetCurrentUserAsync();
             var address = await _db.Addresses.FindAsync(id);
 
@@ -124,7 +129,7 @@ namespace GerenciamentoDeEndereco.Service
             if (dto.Street != null) address.Street = dto.Street;
             if (dto.City != null) address.City = dto.City;
             if (dto.State != null) address.State = dto.State;
-            if (dto.Number != null && dto.Number != 0) address.Number = dto.Number;
+            if (dto.Number != 0 && dto.Number != 0) address.Number = dto.Number;
 
             _db.Addresses.Update(address);
             await _db.SaveChangesAsync();

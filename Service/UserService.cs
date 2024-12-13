@@ -1,22 +1,30 @@
+using AddressManagement.Infra;
+using AddressManagement.Model;
+using AddressManagement.Service;
 using AutoMapper;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
-using GerenciamentoDeEndereco.Migrations;
 using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Response;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace GerenciamentoDeEndereco.Service
 {
+    /// <summary>
+    /// Service class for managing user-related operations.
+    /// </summary>
     public class UserService
     {
         private readonly UserDbContext _db;
         private readonly IMapper _mapper;
         private readonly CommonService _commonService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserService"/> class with the specified dependencies.
+        /// </summary>
+        /// <param name="dbContext">The database context</param>
+        /// <param name="mapper">The AutoMapper instance</param>
+        /// <param name="commonService">The common service for shared operations</param>
         public UserService(UserDbContext dbContext, IMapper mapper, CommonService commonService)
         {
             this._db = dbContext;
@@ -35,6 +43,9 @@ namespace GerenciamentoDeEndereco.Service
             // Convert the user object to a response object.
             var userResponse = _mapper.Map<UserResponse>(userAuthenticated);
             // Return the response
+
+            List<PasswordResetToken> list = userAuthenticated.PasswordResetTokens;
+
             return userResponse;
         }
 
@@ -54,6 +65,23 @@ namespace GerenciamentoDeEndereco.Service
             var userResponse = _mapper.Map<UserResponse>(user.Entity);
 
             return userResponse;
+        }
+
+        /// <summary>
+        /// Retrieves a user by their email asynchronously.
+        /// </summary>
+        /// <param name="email">The email address to search for.</param>
+        /// <returns>The user if found, otherwise throws an exception.</returns>
+        /// <exception cref="Exception">Thrown when the user with the provided email is not found.</exception>
+        public async Task<User> GetUserByEmailAsync(string email)
+        {
+            var user = await _db.Users
+                .Include(user => user.PasswordResetTokens)
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null) throw new Exception("Usuario com email fornecido nao encontrado");
+
+            return user;
         }
 
         /// <summary>
@@ -77,7 +105,7 @@ namespace GerenciamentoDeEndereco.Service
         public async Task<UserResponse> Put(UserUpdateDTO dto)
         {
             // Validate date fields
-            dto.ValidateDate();
+            dto.ValidateData();
             // Get the authenticated user
             var user = await _commonService.GetCurrentUserAsync();
 
@@ -91,6 +119,20 @@ namespace GerenciamentoDeEndereco.Service
             await _db.SaveChangesAsync();
 
             return _mapper.Map<UserResponse>(user);
+        }
+
+        /// <summary>
+        /// Finds a user by their email.
+        /// </summary>
+        /// <param name="email">The email to search for</param>
+        /// <returns>The user if found, otherwise throws an exception</returns>
+        /// <exception cref="Exception">Thrown when the email is not found in the system.</exception>
+        public User FindUserByEmail(string email)
+        {
+            // Search for the user by email
+            var user = _db.Users.SingleOrDefault(x => x.Email == email);
+            if (user != null) return user;
+            throw new Exception("Email not found in the system");
         }
     }
 }

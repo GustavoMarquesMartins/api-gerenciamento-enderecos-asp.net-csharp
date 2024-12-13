@@ -1,6 +1,6 @@
 ﻿using GerenciamentoDeEndereco.Model;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using GerenciamentoDeEndereco.Validators;
 
 namespace GerenciamentoDeEndereco.DTO
 {
@@ -51,5 +51,20 @@ namespace GerenciamentoDeEndereco.DTO
         /// </summary>
         [Required(ErrorMessage = "The number field cannot be blank")]
         public int Number { get; set; }
+
+        /// <summary>
+        /// Validates the input data for the address.
+        /// This method ensures all address fields adhere to specified validation rules.
+        /// </summary>
+        public void ValidateData()
+        {
+            // Validate each address field using the ValidateInputDataAddress static methods.
+            ValidateInputDataAddress.Zipcode(ZipCode);
+            ValidateInputDataAddress.Street(Street);
+            ValidateInputDataAddress.Neighborhood(Neighborhood);
+            ValidateInputDataAddress.City(City);
+            ValidateInputDataAddress.State(State);
+            ValidateInputDataAddress.Number(Number);
+        }
     }
 }

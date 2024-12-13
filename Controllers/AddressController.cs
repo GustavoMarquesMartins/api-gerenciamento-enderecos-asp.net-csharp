@@ -1,9 +1,14 @@
-﻿using GerenciamentoDeEndereco.DTO;
+﻿using AddressManagement.DTO;
+using AddressManagement.Service;
+using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Service;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GerenciamentoDeEndereco.Controllers
+namespace AddressManagement.Controllers
 {
+    /// <summary>
+    /// Controller for address-related operations.
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class AddressController : ControllerBase
@@ -70,7 +75,7 @@ namespace GerenciamentoDeEndereco.Controllers
             try
             {
                 var addressResponse = await _addressService.Post(dto);
-                var uri = await _commonService.GetUri(this, addressResponse.Id.ToString());
+                var uri = _commonService.GetUri(this, addressResponse.Id.ToString());
                 return Created(uri, addressResponse);
             }
             catch (Exception error)

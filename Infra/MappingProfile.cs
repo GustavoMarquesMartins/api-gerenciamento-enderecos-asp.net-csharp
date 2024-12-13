@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using AddressManagement.Model;
+using AutoMapper;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.Response;

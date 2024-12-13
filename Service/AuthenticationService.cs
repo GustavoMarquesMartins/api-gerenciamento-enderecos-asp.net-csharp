@@ -1,11 +1,17 @@
-﻿using GerenciamentoDeEndereco.DTO;
+﻿using AddressManagement.Infra;
+using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
+using GerenciamentoDeEndereco.Model;
+using GerenciamentoDeEndereco.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
 
-namespace GerenciamentoDeEndereco.Service
+namespace AddressManagement.Service
 {
+    /// <summary>
+    /// Service class for handling authentication-related operations.
+    /// </summary>
     public class AuthenticationService
     {
         private readonly UserDbContext _db;

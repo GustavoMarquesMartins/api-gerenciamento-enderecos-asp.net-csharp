@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
+using System.ComponentModel.DataAnnotations;
+using GerenciamentoDeEndereco.Validators;
 
 namespace GerenciamentoDeEndereco.DTO
 {
@@ -44,60 +45,47 @@ namespace GerenciamentoDeEndereco.DTO
         public int Number { get; set; }
 
         /// <summary>
-        /// Validates the fields for correct format.
+        /// Validates the fields for correct format using custom validators.
+        /// This method ensures that only non-null fields are validated.
         /// </summary>
-        /// <exception cref="customException">Thrown when a field is invalid</exception>
-        public void ValidateDate()
+        /// <exception cref="Exception">Thrown when a field is invalid.</exception>
+        public void ValidateData()
         {
+            // Validate ZIP code if it is not null
             if (ZipCode != null)
             {
-                var zipCodePattern = @"^\d{8}$";
-
-                if (!Regex.IsMatch(ZipCode, zipCodePattern))
-                    throw new customException("The ZIP code field must contain 8 numeric characters from 0-9.");
+                ValidateInputDataAddress.Zipcode(ZipCode);
             }
 
+            // Validate street name if it is not null
             if (Street != null)
             {
-                if (string.IsNullOrEmpty(Street))
-                    throw new customException("The street field cannot be blank.");
+                ValidateInputDataAddress.Street(Street);
             }
 
+            // Validate neighborhood name if it is not null
             if (Neighborhood != null)
             {
-                if (string.IsNullOrEmpty(Neighborhood))
-                    throw new customException("The neighborhood field cannot be blank.");
+                ValidateInputDataAddress.Neighborhood(Neighborhood);
             }
 
+            // Validate city name if it is not null
             if (City != null)
             {
-                var cityPattern = @"^([A-Za-z]+\s?)+$";
-                if (!Regex.IsMatch(City, cityPattern))
-                    throw new customException("The city field should contain only letters, no numbers or special characters.");
+                ValidateInputDataAddress.City(City);
             }
 
+            // Validate state abbreviation if it is not null
             if (State != null)
             {
-                var statePattern = @"^[A-Z]{2}$";
-                if (!Regex.IsMatch(State, statePattern))
-                    throw new customException("The state (UF) field must be represented by two letters.");
+                ValidateInputDataAddress.State(State);
             }
 
+            // Validate address number if it is not zero
             if (Number != 0)
             {
-                var numberPattern = @"^\d{1,}$";
-                if (!Regex.IsMatch(Number.ToString(), numberPattern))
-                    throw new customException("The number field cannot contain letters.");
+                ValidateInputDataAddress.Number(Number);
             }
         }
-    }
-
-    /// <summary>
-    /// Exception thrown when a custom validation error occurs.
-    /// </summary>
-    public class customException : Exception
-    {
-        public customException(string error) : base("Error: " + error)
-        { }
     }
 }

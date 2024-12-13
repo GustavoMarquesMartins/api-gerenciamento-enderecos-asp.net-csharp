@@ -1,12 +1,20 @@
+using AddressManagement.Infra;
+using AddressManagement.Model;
 using AutoMapper;
+using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
-namespace GerenciamentoDeEndereco.Service
+namespace AddressManagement.Service
 {
+    /// <summary>
+    /// Service class for common functionalities.
+    /// </summary>
     public class CommonService
     {
         private readonly UserDbContext _db;
@@ -63,7 +71,7 @@ namespace GerenciamentoDeEndereco.Service
         /// <param name="service">Service instance</param>
         /// <param name="id">Identifier for the URI</param>
         /// <returns>Generated URI</returns>
-        public async Task<Uri> GetUri<T>(T service, string id) where T : class
+        public Uri GetUri<T>(T service, string id) where T : class
         {
             // Request context variables
             var protocol = _httpContextAccessor.HttpContext.Request.Scheme;
