@@ -11,7 +11,6 @@ namespace GerenciamentoDeEndereco.DTO
         /// <summary>
         /// Gets or sets the user email.
         /// </summary>
-        [Required(ErrorMessage = "The email field is required.")]
         public string Email { get; set; }
 
         /// <summary>

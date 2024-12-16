@@ -3,10 +3,12 @@ using System.Net;
 using AddressManagement.Model;
 using AddressManagement.Infra;
 using Microsoft.EntityFrameworkCore;
-using MySqlX.XDevAPI.Common;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Service;
 using GerenciamentoDeEndereco.Model;
+using GerenciamentoDeEndereco.CustomExceptions;
+using GerenciamentoDeEndereco.Validators;
+using System.Drawing;
 
 namespace AddressManagement.Service
 {
@@ -20,11 +22,11 @@ namespace AddressManagement.Service
         private readonly UserService _userService;
 
         /// <summary>
-        /// Initializes a new instance of the PasswordResetService class.
+        /// Initializes a new instance of the <see cref="PasswordResetService"/> class.
         /// </summary>
         /// <param name="db">The database context.</param>
-        /// <param name="emailSettings">The email settings.</param>
-        /// <param name="userService">The user service.</param>
+        /// <param name="emailSettings">The email settings for SMTP configuration.</param>
+        /// <param name="userService">The user service for user operations.</param>
         public PasswordResetService(UserDbContext db, EmailSettings emailSettings, UserService userService)
         {
             _db = db;
@@ -35,110 +37,113 @@ namespace AddressManagement.Service
         /// <summary>
         /// Initializes the process of sending a password reset email.
         /// </summary>
-        /// <param name="email">The email address to which the password reset email will be sent.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <param name="email">The recipient's email address.</param>
         public async Task InitializeEmailDispatch(string email)
         {
-            // Create a password reset token for the given email address
             var passwordResetToken = await CreatePasswordResetTokenAsync(email);
-
-            // Send the password reset email with the generated token
             await SendEmailAsync(email, passwordResetToken.VerificationCode);
         }
 
         /// <summary>
-        /// Retrieves a password reset token by the given token string.
+        /// Retrieves a password reset token by its token string.
         /// </summary>
-        /// <param name="token">The token string to search for.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the password reset token.</returns>
-        /// <exception cref="Exception">Thrown when the token is not found.</exception>
+        /// <param name="token">The token string to look up.</param>
+        /// <returns>The password reset token entity.</returns>
+        /// <exception cref="PasswordResetRelationshipNotFoundException">
+        /// Thrown when the token relationship is not found.
+        /// </exception>
         private async Task<PasswordResetToken> GetPasswordResetTokenByToken(string token)
         {
             var result = await _db.PasswordResetTokens
-                .Include(prt => prt.User) // Eager loading the User entity
+                .Include(prt => prt.User)
                 .FirstOrDefaultAsync(prt => prt.Token == token);
 
-            if (result == null) throw new Exception("Relationship with the provided email not found.");
-            return result; // Return the result
+            if (result == null)
+                throw new PasswordResetRelationshipNotFoundException("Relationship with the provided email not found.");
+
+            return result;
         }
 
         /// <summary>
-        /// Sends a password reset email to the specified addressee.
+        /// Sends a password reset email with the provided verification code.
         /// </summary>
         /// <param name="addressee">The recipient email address.</param>
-        /// <param name="verificationCode">The password reset verification code.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">Thrown when the addressee or verification code is empty.</exception>
+        /// <param name="verificationCode">The verification code to include in the email.</param>
         public async Task SendEmailAsync(string addressee, string verificationCode)
         {
-            if (string.IsNullOrWhiteSpace(addressee))
-                throw new ArgumentException("Email address cannot be empty.", nameof(addressee));
-            if (string.IsNullOrWhiteSpace(verificationCode))
-                throw new ArgumentException("Verification code cannot be empty.", nameof(verificationCode));
+            ValidateInputDataPasswordResetToken.Addressee(addressee);
+            ValidateInputDataPasswordResetToken.VerificationCode(verificationCode);
 
-            try
+            using (SmtpClient smtpClient = new SmtpClient("smtp.gmail.com"))
             {
-                // Configure the SMTP client using Google's SMTP server
-                using (SmtpClient smtpClient = new SmtpClient("smtp.gmail.com"))
+                var smtpEmail = _emailSettings.SmtpEmail;
+                var smtpPassword = _emailSettings.SmtpAppPassword;
+
+                smtpClient.Port = 587;
+                smtpClient.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
+                smtpClient.EnableSsl = true;
+
+                var templatePath = "./Source/EmailBody.html";
+                var htmlContent = await File.ReadAllTextAsync(templatePath);
+                htmlContent = htmlContent.Replace("{VerificationCode}", verificationCode);
+
+                MailMessage mailMessage = new MailMessage
                 {
-                    var smtpEmail = _emailSettings.SmtpEmail;
-                    var smtpPassword = _emailSettings.SmtpAppPassword;
+                    From = new MailAddress(smtpEmail),
+                    Subject = "Password Reset",
+                    Body = htmlContent,
+                    IsBodyHtml = true,
+                };
 
-                    smtpClient.Port = 587; // SMTP server port
-                    smtpClient.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
-                    smtpClient.EnableSsl = true; // Enable SSL
+                mailMessage.To.Add(addressee);
 
-                    // Read the HTML email template
-                    var templatePath = "./Source/EmailBody.html";
-                    var htmlContent = await File.ReadAllTextAsync(templatePath); // Asynchronous file read operation
-                    htmlContent = htmlContent.Replace("{VerificationCode}", verificationCode);
-
-                    // Create the email message
-                    MailMessage mailMessage = new MailMessage
-                    {
-                        From = new MailAddress(smtpEmail),
-                        Subject = "Password Reset",
-                        Body = htmlContent,
-                        IsBodyHtml = true, // Set to true if the email body contains HTML
-                    };
-
-                    mailMessage.To.Add(addressee);
-
-                    // Send the email asynchronously
-                    await smtpClient.SendMailAsync(mailMessage);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log or handle the error as needed
-                Console.WriteLine($"Error sending email: {ex.Message}");
-                throw;
+                await smtpClient.SendMailAsync(mailMessage);
             }
         }
 
         /// <summary>
-        /// Generates a verification code for password reset.
+        /// Generates a unique 6-digit verification code.
         /// </summary>
-        /// <returns>A randomly generated verification code as a string.</returns>
-        private string GenerateVerificationCode()
+        /// <returns>A unique verification code.</returns>
+        private async Task<string> GenerateVerificationCode()
         {
             Random random = new Random();
-            string verificationCode = random.Next(100000, 1000000).ToString();
+            string verificationCode;
+
+            do
+            {
+                verificationCode = random.Next(100000, 1000000).ToString();
+            } while (!await IsVerificationCodeUnique(verificationCode));
+
             return verificationCode;
         }
 
         /// <summary>
-        /// Creates a password reset token for the specified user.
+        /// Checks whether a verification code is unique.
         /// </summary>
-        /// <param name="email">The email address of the user for whom the token is created.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the created password reset token.</returns>
+        /// <param name="verificationCode">The verification code to check.</param>
+        /// <returns>True if the code is unique; otherwise, false.</returns>
+        private async Task<bool> IsVerificationCodeUnique(string verificationCode)
+        {
+            var result = await _db.PasswordResetTokens
+                .FirstOrDefaultAsync(c => c.VerificationCode == verificationCode);
+            return result == null;
+        }
+
+        /// <summary>
+        /// Creates a new password reset token for a given email address.
+        /// </summary>
+        /// <param name="email">The user's email address.</param>
+        /// <returns>The generated password reset token.</returns>
         public async Task<PasswordResetToken> CreatePasswordResetTokenAsync(string email)
         {
             var user = await _userService.GetUserByEmailAsync(email);
+            if (user == null)
+                throw new UserNotFound("User with the provided email was not found in the system.");
 
             var token = TokenGenerator.GenerateToken();
             var expirationDate = DateTime.Now.AddMinutes(10);
-            var verificationCode = GenerateVerificationCode();
+            var verificationCode = await GenerateVerificationCode();
 
             var passwordResetToken = new PasswordResetToken
             {
@@ -149,17 +154,19 @@ namespace AddressManagement.Service
                 UserId = user.Id
             };
 
-            if (user.PasswordResetTokens == null) user.PasswordResetTokens = new List<PasswordResetToken>();
+            if (user.PasswordResetTokens == null)
+                user.PasswordResetTokens = new List<PasswordResetToken>();
+
             user.PasswordResetTokens.Add(passwordResetToken);
 
             return await SavePasswordResetTokenAsync(passwordResetToken);
         }
 
         /// <summary>
-        /// Saves the password reset token to the database.
+        /// Saves a password reset token to the database.
         /// </summary>
-        /// <param name="passwordResetToken">The password reset token to save.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the saved password reset token.</returns>
+        /// <param name="passwordResetToken">The token to save.</param>
+        /// <returns>The saved password reset token.</returns>
         public async Task<PasswordResetToken> SavePasswordResetTokenAsync(PasswordResetToken passwordResetToken)
         {
             var result = await _db.PasswordResetTokens.AddAsync(passwordResetToken);
@@ -168,79 +175,69 @@ namespace AddressManagement.Service
         }
 
         /// <summary>
-        /// Verifies the validity of the specified token.
+        /// Verifies the validity of a token.
         /// </summary>
         /// <param name="token">The token to verify.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the user associated with the token.</returns>
+        /// <returns>The user associated with the token.</returns>
         public async Task<User> VerifyTokenValidityAsync(string token)
         {
             var result = await GetPasswordResetTokenByToken(token);
-
             VerifyExpiration(result.Expiration);
             return result.User;
         }
 
         /// <summary>
-        /// Retrieves a password reset token by the given verification code.
+        /// Retrieves a password reset token by verification code.
         /// </summary>
-        /// <param name="code">The verification code to search for.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the password reset token.</returns>
-        /// <exception cref="Exception">Thrown when the verification code is not found.</exception>
+        /// <param name="code">The verification code.</param>
+        /// <returns>The password reset token associated with the code.</returns>
         public async Task<PasswordResetToken> GetPasswordResetTokenByCode(string code)
         {
             var result = await _db.PasswordResetTokens
                 .Include(prt => prt.User)
                 .FirstOrDefaultAsync(prt => prt.VerificationCode == code);
 
-            if (result == null) throw new Exception("Relationship with the provided code not found.");
+            if (result == null)
+                throw new PasswordResetRelationshipNotFoundException("Relationship with the provided code not found.");
+
             return result;
         }
 
         /// <summary>
-        /// Verifies the validity of the specified verification code.
+        /// Verifies the validity of a verification code.
         /// </summary>
-        /// <param name="code">The verification code to verify.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the token associated with the verification code.</returns>
+        /// <param name="code">The verification code.</param>
+        /// <returns>The associated token.</returns>
         public async Task<string> VerifyCodeValidityAsync(string code)
         {
             var result = await GetPasswordResetTokenByCode(code);
-
             VerifyExpiration(result.Expiration);
-
             return result.Token;
         }
 
         /// <summary>
-        /// Checks if the token has expired.
+        /// Checks whether a token has expired.
         /// </summary>
         /// <param name="expiration">The expiration date of the token.</param>
-        /// <exception cref="InvalidOperationException">Thrown if the token has expired.</exception>
         public void VerifyExpiration(DateTime expiration)
         {
             if (expiration < DateTime.Now)
-                throw new InvalidOperationException("Token expired.");
+                throw new TokenExpired("Token expired.");
         }
 
         /// <summary>
-        /// Updates the user's password using the specified token and new password.
+        /// Updates the user's password using the provided token.
         /// </summary>
         /// <param name="token">The password reset token.</param>
         /// <param name="newPassword">The new password.</param>
-        /// <param name="newPasswordConfirm">The new password confirmation.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">Thrown when the new password and confirmation password do not match.</exception>
-        /// <exception cref="Exception">Thrown when the new password is the same as the old password.</exception>
+        /// <param name="newPasswordConfirm">The confirmation of the new password.</param>
         public async Task UpdateUserPasswordAsync(string token, string newPassword, string newPasswordConfirm)
         {
-            if (newPassword != newPasswordConfirm)
-                throw new ArgumentException("The new password and confirmation password do not match.");
-
+            ValidateInputDataUser.IsPasswordEqual(newPassword, newPasswordConfirm);
             var user = await VerifyTokenValidityAsync(token);
-            if (user.Password == newPassword)
-                throw new Exception("The new password must be different from the old password.");
+            ValidateInputDataUser.IsNewPasswordDifferenIsPasswordEqualtFromOld(newPassword, user.Password);
 
             user.Password = newPassword;
-
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
         }

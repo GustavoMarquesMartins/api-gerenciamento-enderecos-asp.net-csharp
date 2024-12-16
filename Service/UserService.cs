@@ -2,6 +2,7 @@ using AddressManagement.Infra;
 using AddressManagement.Model;
 using AddressManagement.Service;
 using AutoMapper;
+using GerenciamentoDeEndereco.CustomExceptions;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
@@ -44,8 +45,6 @@ namespace GerenciamentoDeEndereco.Service
             var userResponse = _mapper.Map<UserResponse>(userAuthenticated);
             // Return the response
 
-            List<PasswordResetToken> list = userAuthenticated.PasswordResetTokens;
-
             return userResponse;
         }
 
@@ -56,8 +55,14 @@ namespace GerenciamentoDeEndereco.Service
         /// <returns>UserResponse object with created user data</returns>
         public async Task<UserResponse> Post(UserDTO DTO)
         {
+            DTO.ValidateData();
+
+            var result = await GetUserByEmailAsync(DTO.Email);
+            if (result != null) throw new EmailAlreadyRegisteredException("The provided email is already registered.");
+
             // Convert DTO to user and save to the database
             var dtoToUser = _mapper.Map<User>(DTO);
+
             var user = await _db.Users.AddAsync(dtoToUser);
             await _db.SaveChangesAsync();
 
@@ -78,8 +83,6 @@ namespace GerenciamentoDeEndereco.Service
             var user = await _db.Users
                 .Include(user => user.PasswordResetTokens)
                 .FirstOrDefaultAsync(u => u.Email == email);
-
-            if (user == null) throw new Exception("Usuario com email fornecido nao encontrado");
 
             return user;
         }
@@ -104,7 +107,7 @@ namespace GerenciamentoDeEndereco.Service
         /// <returns>UserResponse object with updated user data</returns>
         public async Task<UserResponse> Put(UserUpdateDTO dto)
         {
-            // Validate date fields
+            // Validate data fields
             dto.ValidateData();
             // Get the authenticated user
             var user = await _commonService.GetCurrentUserAsync();
@@ -119,20 +122,6 @@ namespace GerenciamentoDeEndereco.Service
             await _db.SaveChangesAsync();
 
             return _mapper.Map<UserResponse>(user);
-        }
-
-        /// <summary>
-        /// Finds a user by their email.
-        /// </summary>
-        /// <param name="email">The email to search for</param>
-        /// <returns>The user if found, otherwise throws an exception</returns>
-        /// <exception cref="Exception">Thrown when the email is not found in the system.</exception>
-        public User FindUserByEmail(string email)
-        {
-            // Search for the user by email
-            var user = _db.Users.SingleOrDefault(x => x.Email == email);
-            if (user != null) return user;
-            throw new Exception("Email not found in the system");
         }
     }
 }

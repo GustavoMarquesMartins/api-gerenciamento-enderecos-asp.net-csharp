@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AddressManagement.Controllers
 {
     /// <summary>
-    /// Controller for address-related operations.
+    /// Provides API endpoints for address-related operations for the authenticated user.
     /// </summary>
     [ApiController]
     [Route("[controller]")]
@@ -17,10 +17,10 @@ namespace AddressManagement.Controllers
         private readonly CommonService _commonService;
 
         /// <summary>
-        /// Constructor that initializes the AddressController with dependencies.
+        /// Initializes a new instance of the <see cref="AddressController"/> class.
         /// </summary>
-        /// <param name="addressService">Service for address operations</param>
-        /// <param name="commonService">Common service for shared functionalities</param>
+        /// <param name="addressService">Service for handling address operations.</param>
+        /// <param name="commonService">Service providing common functionalities.</param>
         public AddressController(AddressService addressService, CommonService commonService)
         {
             _addressService = addressService;
@@ -28,9 +28,9 @@ namespace AddressManagement.Controllers
         }
 
         /// <summary>
-        /// Retrieves the list of addresses for the authenticated user.
+        /// Retrieves the list of all addresses for the authenticated user.
         /// </summary>
-        /// <returns>ActionResult containing the list of addresses</returns>
+        /// <returns>An <see cref="ActionResult"/> containing a list of addresses.</returns>
         [HttpGet]
         public async Task<IActionResult> Get()
         {
@@ -41,15 +41,15 @@ namespace AddressManagement.Controllers
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error retrieving addresses. Please try again later.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error retrieving all addresses: {error.Message}");
             }
         }
 
         /// <summary>
         /// Retrieves a specific address by its ID for the authenticated user.
         /// </summary>
-        /// <param name="id">Address ID</param>
-        /// <returns>ActionResult containing the address details</returns>
+        /// <param name="id">The ID of the address to retrieve.</param>
+        /// <returns>An <see cref="ActionResult"/> containing the address details.</returns>
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(long id)
         {
@@ -60,15 +60,15 @@ namespace AddressManagement.Controllers
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error retrieving address. Please try again later.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error retrieving address: {error.Message}");
             }
         }
 
         /// <summary>
         /// Creates a new address for the authenticated user.
         /// </summary>
-        /// <param name="dto">Data Transfer Object for address creation</param>
-        /// <returns>ActionResult containing the created address details</returns>
+        /// <param name="dto">The data transfer object containing the address information.</param>
+        /// <returns>An <see cref="ActionResult"/> containing the created address details.</returns>
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] AddressDTO dto)
         {
@@ -87,8 +87,8 @@ namespace AddressManagement.Controllers
         /// <summary>
         /// Deletes a specific address by its ID for the authenticated user.
         /// </summary>
-        /// <param name="id">Address ID</param>
-        /// <returns>No content</returns>
+        /// <param name="id">The ID of the address to delete.</param>
+        /// <returns>No content on successful deletion.</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id)
         {
@@ -106,9 +106,9 @@ namespace AddressManagement.Controllers
         /// <summary>
         /// Updates a specific address by its ID for the authenticated user.
         /// </summary>
-        /// <param name="id">Address ID</param>
-        /// <param name="dto">Data Transfer Object for address update</param>
-        /// <returns>ActionResult containing the updated address details</returns>
+        /// <param name="id">The ID of the address to update.</param>
+        /// <param name="dto">The data transfer object containing the updated address information.</param>
+        /// <returns>An <see cref="ActionResult"/> containing the updated address details.</returns>
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(long id, [FromBody] AddressUpdateDTO dto)
         {
@@ -119,7 +119,7 @@ namespace AddressManagement.Controllers
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error updating address: " + error.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error updating address: {error.Message}");
             }
         }
     }

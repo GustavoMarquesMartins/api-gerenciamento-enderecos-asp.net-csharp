@@ -1,14 +1,8 @@
 using AddressManagement.Infra;
 using AddressManagement.Model;
 using AutoMapper;
-using GerenciamentoDeEndereco.DTO;
-using GerenciamentoDeEndereco.Infra;
-using GerenciamentoDeEndereco.Model;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
+using GerenciamentoDeEndereco.CustomExceptions;
 using System.Security.Claims;
-using System.Text.RegularExpressions;
 
 namespace AddressManagement.Service
 {
@@ -18,19 +12,16 @@ namespace AddressManagement.Service
     public class CommonService
     {
         private readonly UserDbContext _db;
-        private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         /// <summary>
         /// Constructor that initializes CommonService with dependencies.
         /// </summary>
         /// <param name="db">User database context</param>
-        /// <param name="mapper">Mapper for object-object mapping</param>
         /// <param name="httpContextAccessors">Accessor for HTTP context</param>
         public CommonService(UserDbContext db, IMapper mapper, IHttpContextAccessor httpContextAccessors)
         {
             this._db = db;
-            this._mapper = mapper;
             this._httpContextAccessor = httpContextAccessors;
         }
 
@@ -38,27 +29,30 @@ namespace AddressManagement.Service
         /// Retrieves the current authenticated user asynchronously.
         /// </summary>
         /// <returns>User object representing the current authenticated user</returns>
+        /// <exception cref="UserNotAuthenticated">Thrown when the user is not authenticated</exception>
+        /// <exception cref="InvalidClaimIdentifierException">Thrown when the claim identifier is invalid</exception>
+        /// <exception cref="UserNotFound">Thrown when the user is not found in the database</exception>
         public async Task<User> GetCurrentUserAsync()
         {
             var httpContextUser = _httpContextAccessor.HttpContext.User;
 
             if (!httpContextUser.Identity.IsAuthenticated)
             {
-                throw new InvalidOperationException("User not authenticated.");
+                throw new UserNotAuthenticated("User not authenticated.");
             }
 
             var claim = httpContextUser.FindFirst(ClaimTypes.NameIdentifier);
 
             if (!long.TryParse(claim.Value, out var id))
             {
-                throw new InvalidOperationException("The claim value 'NameIdentifier' is not a valid number.");
+                throw new InvalidClaimIdentifierException("The claim value 'NameIdentifier' is not a valid number.");
             }
 
             var user = await _db.Users.FindAsync(id);
 
             if (user == null)
             {
-                throw new InvalidOperationException("User not found.");
+                throw new UserNotFound("User not found.");
             }
 
             return user;

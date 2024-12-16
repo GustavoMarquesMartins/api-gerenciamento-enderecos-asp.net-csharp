@@ -1,4 +1,7 @@
-﻿using AddressManagement.Infra;
+﻿using System.Security.Authentication;
+using AddressManagement.Infra;
+using AddressManagement.Model;
+using GerenciamentoDeEndereco.CustomExceptions;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
@@ -33,23 +36,18 @@ namespace AddressManagement.Service
         /// </summary>
         /// <param name="dto">Login Data Transfer Object containing user credentials</param>
         /// <returns>JWT token as a string</returns>
-        /// <exception cref="Exception">Thrown when user is not found</exception>
+        /// <exception cref="InvalidCredentialsException">Thrown when the provided credentials are incorrect</exception>
         public async Task<string> Post([FromBody] LoginDTO dto)
         {
-            var sqlQuery = "SELECT * FROM Users WHERE email = @Email AND password = @Password";
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
 
-            var user = await _db.Users.FromSqlRaw(sqlQuery,
-                new MySqlParameter("@Email", dto.Email),
-                new MySqlParameter("@Password", dto.Password)
-            ).FirstOrDefaultAsync();
-
-            if (user != null)
+            if (user == null || user.Password != dto.Password)
             {
-                var token = _jwtService.GenerateToken(user.Id.ToString());
-                return token;
+                throw new InvalidCredentialsException("Incorrect E-mail or password. Please check your credentials and try again.");
             }
 
-            throw new Exception("User not found");
+            var token = _jwtService.GenerateToken(user.Id.ToString());
+            return token;
         }
     }
 }

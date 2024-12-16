@@ -18,7 +18,7 @@ namespace GerenciamentoDeEndereco.Validators
             var zipCodePattern = @"^\d{8}$";
             // Validate the ZIP code against the pattern
             if (!Regex.IsMatch(zipcode, zipCodePattern))
-                throw new Exception("The ZIP code field must contain 8 numeric characters from 0-9.");
+                throw new ArgumentException("The ZIP code field must contain 8 numeric characters from 0-9.");
         }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace GerenciamentoDeEndereco.Validators
         {
             // Validate that the street name is not blank
             if (string.IsNullOrEmpty(street))
-                throw new Exception("The street field cannot be blank.");
+                throw new ArgumentException("The street field cannot be blank.");
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace GerenciamentoDeEndereco.Validators
         {
             // Validate that the neighborhood name is not blank
             if (string.IsNullOrEmpty(neighborhood))
-                throw new Exception("The neighborhood field cannot be blank.");
+                throw new ArgumentException("The neighborhood field cannot be blank.");
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace GerenciamentoDeEndereco.Validators
             var cityPattern = @"^([A-Za-z]+\s?)+$";
             // Validate the city name against the pattern
             if (!Regex.IsMatch(city, cityPattern))
-                throw new Exception("The city field should contain only letters, no numbers or special characters.");
+                throw new ArgumentException("The city field should contain only letters, no numbers or special characters.");
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace GerenciamentoDeEndereco.Validators
             var statePattern = @"^[A-Z]{2}$";
             // Validate the state abbreviation against the pattern
             if (!Regex.IsMatch(state, statePattern))
-                throw new Exception("The state (UF) field must be represented by two letters.");
+                throw new ArgumentException("The state (UF) field must be represented by two letters.");
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace GerenciamentoDeEndereco.Validators
             var numberPattern = @"^\d{1,}$";
             // Validate the address number against the pattern
             if (!Regex.IsMatch(number.ToString(), numberPattern))
-                throw new Exception("The number field cannot contain letters.");
+                throw new ArgumentException("The number field cannot contain letters.");
         }
     }
 }

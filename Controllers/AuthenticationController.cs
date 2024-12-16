@@ -16,9 +16,9 @@ namespace AddressManagement.Controllers
         private readonly AuthenticationService _authenticationService;
 
         /// <summary>
-        /// Constructor that initializes the Authentication controller with dependencies.
+        /// Initializes a new instance of the <see cref="Authentication"/> class with the specified services.
         /// </summary>
-        /// <param name="authenticationService">Service for authentication operations</param>
+        /// <param name="authenticationService">The service responsible for authentication operations.</param>
         public Authentication(AuthenticationService authenticationService)
         {
             _authenticationService = authenticationService;
@@ -27,8 +27,8 @@ namespace AddressManagement.Controllers
         /// <summary>
         /// Authenticates a user and generates a JWT token.
         /// </summary>
-        /// <param name="dto">Login Data Transfer Object containing user credentials</param>
-        /// <returns>ActionResult containing the generated JWT token</returns>
+        /// <param name="dto">The login Data Transfer Object containing user credentials.</param>
+        /// <returns>An <see cref="ActionResult"/> containing the generated JWT token.</returns>
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] LoginDTO dto)
         {
@@ -37,9 +37,9 @@ namespace AddressManagement.Controllers
                 var token = await _authenticationService.Post(dto);
                 return Ok(token);
             }
-            catch (Exception ex)
+            catch (Exception error)
             {
-                return StatusCode(500, "An internal error occurred. Details: " + ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred during authentication: " + error.Message);
             }
         }
     }

@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AddressManagement.Controllers
 {
     /// <summary>
-    /// Controller for user-related operations.
+    /// Provides API endpoints for user-related operations.
     /// </summary>
     [ApiController]
     [Route("/[controller]")]
@@ -22,12 +22,12 @@ namespace AddressManagement.Controllers
         private readonly PasswordResetService _passwordResetService;
 
         /// <summary>
-        /// Constructor that initializes the UserController with dependencies.
+        /// Initializes a new instance of the <see cref="UserController"/> class.
         /// </summary>
-        /// <param name="userService">Service for user operations</param>
-        /// <param name="commonService">Common service for shared functionalities</param>
-        /// <param name="passwordResetService">Service for password reset operations</param>
-        /// <exception cref="ArgumentNullException">Thrown when a dependency is null</exception>
+        /// <param name="userService">Service for handling user operations.</param>
+        /// <param name="commonService">Service providing common functionalities.</param>
+        /// <param name="passwordResetService">Service for handling password reset operations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when a dependency is null.</exception>
         public UserController(UserService userService, CommonService commonService, PasswordResetService passwordResetService)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
@@ -38,7 +38,7 @@ namespace AddressManagement.Controllers
         /// <summary>
         /// Retrieves the authenticated user details.
         /// </summary>
-        /// <returns>ActionResult containing the user details</returns>
+        /// <returns>An <see cref="ActionResult"/> containing the user details.</returns>
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Get()
@@ -49,15 +49,15 @@ namespace AddressManagement.Controllers
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error retrieving user. Please try again later.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error retrieving user. Please try again later. Error details: {error.Message}");
             }
         }
 
         /// <summary>
         /// Creates a new user.
         /// </summary>
-        /// <param name="dto">Data Transfer Object for user creation</param>
-        /// <returns>ActionResult containing the created user details</returns>
+        /// <param name="dto">The data transfer object for user creation.</param>
+        /// <returns>An <see cref="ActionResult"/> containing the created user details.</returns>
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> Post([FromBody] UserDTO dto)
@@ -65,20 +65,20 @@ namespace AddressManagement.Controllers
             try
             {
                 var userResponse = await _userService.Post(dto);
-                Uri uri = _commonService.GetUri(this, "");
+                Uri uri = _commonService.GetUri(this, userResponse.Id.ToString());
 
                 return Created(uri, userResponse);
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error creating user. Please try again later.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error creating user. Please try again later. Error details: {error.Message}");
             }
         }
 
         /// <summary>
         /// Deletes the authenticated user.
         /// </summary>
-        /// <returns>No content</returns>
+        /// <returns>No content on successful deletion.</returns>
         [HttpDelete]
         [Authorize]
         public async Task<IActionResult> Delete()
@@ -90,15 +90,15 @@ namespace AddressManagement.Controllers
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error deleting user. Please check your user permissions.");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error deleting user. Please try again later. Error details: {error.Message}");
             }
         }
 
         /// <summary>
         /// Updates the authenticated user details.
         /// </summary>
-        /// <param name="dto">Data Transfer Object for updating user details</param>
-        /// <returns>ActionResult containing the updated user details</returns>
+        /// <param name="dto">The data transfer object for updating user details.</param>
+        /// <returns>An <see cref="ActionResult"/> containing the updated user details.</returns>
         [HttpPut]
         [Authorize]
         public async Task<IActionResult> Put([FromBody] UserUpdateDTO dto)
@@ -110,7 +110,7 @@ namespace AddressManagement.Controllers
             }
             catch (Exception error)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error updating user: " + error.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error updating user. Please try again later. Error details: {error.Message}");
             }
         }
 
@@ -118,9 +118,9 @@ namespace AddressManagement.Controllers
         /// Initiates the process to send a password reset email.
         /// </summary>
         /// <param name="dto">The data transfer object containing the email address.</param>
-        /// <returns>An IActionResult indicating the result of the operation.</returns>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> Get([FromBody] PasswordResetRequestDTO dto)
+        public async Task<IActionResult> ForgotPassword([FromBody] PasswordResetRequestDTO dto)
         {
             try
             {
@@ -131,7 +131,7 @@ namespace AddressManagement.Controllers
             catch (Exception error)
             {
                 // Return a 500 Internal Server Error response with the error message
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal error when sending email: " + error.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error when sending password reset email. Please try again later. Error details: {error.Message}");
             }
         }
 
@@ -139,21 +139,27 @@ namespace AddressManagement.Controllers
         /// Validates the password reset code.
         /// </summary>
         /// <param name="requestCode">The data transfer object containing the reset code.</param>
-        /// <returns>An IActionResult containing the validation token.</returns>
+        /// <returns>An <see cref="IActionResult"/> containing the validation token.</returns>
         [HttpPost("validate-code")]
         public async Task<IActionResult> ValidatePasswordRequestCode([FromBody] PasswordRequestCodeDTO requestCode)
         {
-            var code = requestCode.Code;
-            ValidateInputDataAuthentication.Code(code);
-            var token = await _passwordResetService.VerifyCodeValidityAsync(code);
-            return Ok(token);
+            try
+            {
+                ValidateInputDataAuthentication.Code(requestCode.Code);
+                var token = await _passwordResetService.VerifyCodeValidityAsync(requestCode.Code);
+                return Ok(token);
+            }
+            catch (Exception error)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error validating password reset code. Please try again later. Error details: {error.Message}");
+            }
         }
 
         /// <summary>
         /// Resets the user's password using the provided token and new password.
         /// </summary>
         /// <param name="dto">The data transfer object containing the token, new password, and confirmation of the new password.</param>
-        /// <returns>An IActionResult indicating the result of the operation.</returns>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] PasswordChangeRequestDTO dto)
         {
@@ -168,7 +174,7 @@ namespace AddressManagement.Controllers
             catch (Exception error)
             {
                 // Return a 500 Internal Server Error response with the error message
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error when trying to update password: " + error.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal error updating password. Please try again later. Error details: {error.Message}");
             }
         }
     }

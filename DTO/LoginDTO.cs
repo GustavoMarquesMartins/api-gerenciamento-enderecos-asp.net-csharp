@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using GerenciamentoDeEndereco.Validators;
+﻿using GerenciamentoDeEndereco.Validators;
 
 namespace GerenciamentoDeEndereco.DTO
 {
@@ -11,13 +10,11 @@ namespace GerenciamentoDeEndereco.DTO
         /// <summary>
         /// Gets or sets the user email.
         /// </summary>
-        [Required(ErrorMessage = "The email field is required.")]
         public string Email { get; set; }
 
         /// <summary>
         /// Gets or sets the user password.
         /// </summary>
-        [Required(ErrorMessage = "The password field is required.")]
         public string Password { get; set; }
 
         /// <summary>
