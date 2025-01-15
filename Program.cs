@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -131,5 +132,36 @@ app.Use(async (context, next) =>
 });
 
 app.UseStaticFiles(); // Allows the application to use static files
+
+
+// Database creation and migration application
+using (var scope = app.Services.CreateScope())
+{
+    // Get the service provider from the current scope
+    var services = scope.ServiceProvider;
+
+    // Retrieve the UserDbContext from the service provider
+    var context = services.GetRequiredService<UserDbContext>();
+
+    // Check if the database can be connected to (i.e., if it exists)
+    var dbExists = context.Database.CanConnect();
+
+    if (!dbExists)
+    {
+        // If the database does not exist, create it and apply migrations
+        Console.WriteLine("Database not found. Creating the database and applying migrations...");
+
+        // Create the database and apply any pending migrations
+        context.Database.Migrate();
+    }
+    else
+    {
+        // If the database already exists, apply any pending migrations
+        Console.WriteLine("Database already exists. Applying migrations if necessary...");
+
+        // Apply any pending migrations
+        context.Database.Migrate();
+    }
+}
 
 app.Run(); // Runs the application
