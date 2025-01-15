@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GerenciamentoDeEndereco", "GerenciamentoDeEndereco.csproj", "{9B5E6A8A-4AC4-4C10-8490-ABA9C22AAC83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AddressManagement", "AddressManagement.csproj", "{9B5E6A8A-4AC4-4C10-8490-ABA9C22AAC83}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
