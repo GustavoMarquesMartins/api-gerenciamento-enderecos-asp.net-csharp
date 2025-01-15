@@ -1,11 +1,10 @@
-﻿using AddressManagement.Middlewares;
-using Microsoft.Extensions.Primitives;
+﻿using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
-namespace AddressManagement.Middlewares
+namespace GerenciamentoDeEndereco.Security.Middlewares
 {
     /// <summary>
     /// Middleware class for handling JWT authentication.
@@ -22,8 +21,8 @@ namespace AddressManagement.Middlewares
         /// <param name="key">Secret key for JWT validation</param>
         public JwtAuthenticationMiddleware(RequestDelegate next, string key)
         {
-            _next = next;
-            _key = key;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
+            _key = key ?? throw new ArgumentNullException(nameof(key));
         }
 
         /// <summary>
@@ -31,7 +30,7 @@ namespace AddressManagement.Middlewares
         /// </summary>
         /// <param name="context">HTTP context</param>
         /// <returns>Task representing the asynchronous operation</returns>
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
             // Skip JWT validation for specific endpoints and HTTP methods
             if (PathSettings.IsExcludedPath(context))

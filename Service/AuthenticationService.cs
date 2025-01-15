@@ -41,7 +41,10 @@ namespace AddressManagement.Service
         {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
 
-            if (user == null || user.Password != dto.Password)
+            var salt = user.Salt;
+            var dtoPasswordHashWithUserSalt = user.GeneratePasswordHashWithSalt(dto.Password, salt);
+
+            if (user == null || user.Password != dtoPasswordHashWithUserSalt)
             {
                 throw new InvalidCredentialsException("Incorrect E-mail or password. Please check your credentials and try again.");
             }

@@ -61,13 +61,16 @@ namespace GerenciamentoDeEndereco.Service
             if (result != null) throw new EmailAlreadyRegisteredException("The provided email is already registered.");
 
             // Convert DTO to user and save to the database
-            var dtoToUser = _mapper.Map<User>(DTO);
+            var user = _mapper.Map<User>(DTO);
 
-            var user = await _db.Users.AddAsync(dtoToUser);
+            // hashes the password
+            user.SetPasswordHashAndSaltToEntity(user.Password);
+
+            var userSaved = await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
 
             // Generate response object
-            var userResponse = _mapper.Map<UserResponse>(user.Entity);
+            var userResponse = _mapper.Map<UserResponse>(userSaved.Entity);
 
             return userResponse;
         }
@@ -115,7 +118,10 @@ namespace GerenciamentoDeEndereco.Service
             // Update user properties if they are not null
             if (dto.Name != null) user.Name = dto.Name;
             if (dto.Email != null) user.Email = dto.Email;
-            if (dto.Password != null) user.Password = dto.Password;
+
+            if (dto.Password != null) {
+                user.SetPasswordHashAndSaltToEntity(dto.Password);
+            }
 
             // Update user in the database
             _db.Users.Update(user);

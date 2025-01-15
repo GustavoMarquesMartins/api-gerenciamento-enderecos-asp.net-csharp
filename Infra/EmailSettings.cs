@@ -8,11 +8,6 @@ namespace GerenciamentoDeEndereco.Infra
     public class EmailSettings
     {
         /// <summary>
-        /// Gets or sets the URL for the password reset API.
-        /// </summary>
-        public string PasswordResetApiUrl { get; set; }
-
-        /// <summary>
         /// Gets or sets the email address for SMTP authentication.
         /// </summary>
         public string SmtpEmail { get; set; }
@@ -28,9 +23,8 @@ namespace GerenciamentoDeEndereco.Infra
         /// <param name="passwordResetApiUrl">The URL for the password reset API.</param>
         /// <param name="smtpEmail">The email address for SMTP authentication.</param>
         /// <param name="smtpAppPassword">The application-specific password for SMTP authentication.</param>
-        public EmailSettings(string passwordResetApiUrl, string smtpEmail, string smtpAppPassword)
+        public EmailSettings(string smtpEmail, string smtpAppPassword)
         {
-            this.PasswordResetApiUrl = passwordResetApiUrl;
             this.SmtpEmail = smtpEmail;
             this.SmtpAppPassword = smtpAppPassword;
         }

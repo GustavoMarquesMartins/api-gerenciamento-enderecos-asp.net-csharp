@@ -53,14 +53,18 @@ namespace GerenciamentoDeEndereco.Validators
                 throw new ArgumentException("The password must be at least 6 characters long, contain at least one uppercase letter, and one special character.");
         }
 
-        public static void IsNewPasswordDifferenIsPasswordEqualtFromOld(string newPassword, string oldPassword)
-        {
-            if (newPassword == oldPassword) throw new PasswordCannotBeSameAsOldException("The new password and confirmation password do not match.");
-        }
-
+        /// <summary>
+        /// Validates that the password and its confirmation match.
+        /// </summary>
+        /// <param name="password">The password provided by the user.</param>
+        /// <param name="passwordConfirm">The confirmation password provided by the user.</param>
+        /// <exception cref="PasswordsDoNotMatch">
+        /// Thrown when the password and confirmation password do not match.
+        /// </exception>
         public static void IsPasswordEqual(string password, string passwordConfirm)
         {
-            if (password != passwordConfirm) throw new PasswordsDoNotMatch("The new password and confirmation password do not match.");
+            if (password != passwordConfirm)
+                throw new PasswordsDoNotMatch("The new password and confirmation password do not match.");
         }
     }
 }

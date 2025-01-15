@@ -8,7 +8,7 @@ using GerenciamentoDeEndereco.Service;
 using GerenciamentoDeEndereco.Model;
 using GerenciamentoDeEndereco.CustomExceptions;
 using GerenciamentoDeEndereco.Validators;
-using System.Drawing;
+using GerenciamentoDeEndereco.Security.Generator;
 
 namespace AddressManagement.Service
 {
@@ -102,33 +102,32 @@ namespace AddressManagement.Service
         }
 
         /// <summary>
-        /// Generates a unique 6-digit verification code.
+        /// Generates a unique verification code by repeatedly generating a code
+        /// and checking its uniqueness in the database.
         /// </summary>
         /// <returns>A unique verification code.</returns>
-        private async Task<string> GenerateVerificationCode()
+        private async Task<string> GenerateVerificationCodeUnique()
         {
-            Random random = new Random();
             string verificationCode;
-
             do
             {
-                verificationCode = random.Next(100000, 1000000).ToString();
-            } while (!await IsVerificationCodeUnique(verificationCode));
+                verificationCode = VerificationCodeGenerator.GenerateVerificationCode();
+            } while (!await ValidationCodeUnique(verificationCode));
 
             return verificationCode;
         }
 
         /// <summary>
-        /// Checks whether a verification code is unique.
+        /// Checks whether a validation code is unique by querying the database.
         /// </summary>
-        /// <param name="verificationCode">The verification code to check.</param>
+        /// <param name="validationCode">The validation code to check.</param>
         /// <returns>True if the code is unique; otherwise, false.</returns>
-        private async Task<bool> IsVerificationCodeUnique(string verificationCode)
+        private async Task<bool> ValidationCodeUnique(string validationCode)
         {
-            var result = await _db.PasswordResetTokens
-                .FirstOrDefaultAsync(c => c.VerificationCode == verificationCode);
+            var result = await _db.PasswordResetTokens.FirstOrDefaultAsync(p => p.VerificationCode == validationCode);
             return result == null;
         }
+
 
         /// <summary>
         /// Creates a new password reset token for a given email address.
@@ -143,7 +142,7 @@ namespace AddressManagement.Service
 
             var token = TokenGenerator.GenerateToken();
             var expirationDate = DateTime.Now.AddMinutes(10);
-            var verificationCode = await GenerateVerificationCode();
+            var verificationCode = await GenerateVerificationCodeUnique();
 
             var passwordResetToken = new PasswordResetToken
             {
@@ -235,9 +234,9 @@ namespace AddressManagement.Service
         {
             ValidateInputDataUser.IsPasswordEqual(newPassword, newPasswordConfirm);
             var user = await VerifyTokenValidityAsync(token);
-            ValidateInputDataUser.IsNewPasswordDifferenIsPasswordEqualtFromOld(newPassword, user.Password);
 
-            user.Password = newPassword;
+            user.SetPasswordHashAndSaltToEntity(newPassword);
+
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
         }

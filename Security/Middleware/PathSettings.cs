@@ -1,4 +1,4 @@
-﻿namespace AddressManagement.Middlewares
+﻿namespace GerenciamentoDeEndereco.Security.Middlewares
 {
     /// <summary>
     /// Class to store the paths and methods that are excluded from JWT validation.

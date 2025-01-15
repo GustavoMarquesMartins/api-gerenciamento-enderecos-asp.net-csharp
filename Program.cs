@@ -1,11 +1,12 @@
 using AddressManagement.Infra;
-using AddressManagement.Middlewares;
 using AddressManagement.Service;
 using dotenv.net;
 using GerenciamentoDeEndereco.DTO;
 using GerenciamentoDeEndereco.Infra;
 using GerenciamentoDeEndereco.Model;
+using GerenciamentoDeEndereco.Security.Middlewares;
 using GerenciamentoDeEndereco.Service;
+using GerenciamentoDeEndereco.Validator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Localization;
@@ -38,7 +39,8 @@ var dbPort = builder.Configuration["DATABASE_PORT"];
 var dbName = builder.Configuration["DATABASE_NAME"];
 var dbUser = builder.Configuration["DATABASE_USER"];
 var dbPassword = builder.Configuration["DATABASE_PASSWORD"];
-var passwordResetApiUrl = builder.Configuration["PASSWORD_RESET_API_URL"];
+
+EnvironmentVariableChecker.Validate();
 
 // Builds the database connection string
 var mySqlConnectionString = $"Server={dbHost};Port={dbPort};Database={dbName};User={dbUser};Password={dbPassword};";
@@ -54,7 +56,7 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 });
 
 builder.Services.AddScoped<EmailSettings>(config => {
-    return new EmailSettings(passwordResetApiUrl, smtpEmail, smtpAppPassword);
+    return new EmailSettings(smtpEmail, smtpAppPassword);
 });
 
 builder.Services.AddAuthorization(options =>
@@ -122,7 +124,11 @@ app.UseCors("AllowLocalhost");
 app.MapControllers(); // Maps controllers to the request pipeline
 
 // Adds the custom JwtAuthenticationMiddleware to the pipeline
-app.UseMiddleware<JwtAuthenticationMiddleware>(secretKey);
+app.Use(async (context, next) =>
+{
+    var middleware = new JwtAuthenticationMiddleware(next, secretKey);
+    await middleware.InvokeAsync(context);
+});
 
 app.UseStaticFiles(); // Allows the application to use static files
 

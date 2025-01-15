@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace GerenciamentoDeEndereco.Infra
+namespace GerenciamentoDeEndereco.Security.Generator
 {
     public static class TokenGenerator
     {
@@ -17,7 +17,7 @@ namespace GerenciamentoDeEndereco.Infra
                 rng.GetBytes(bytes);
 
                 // Converte o array de bytes para uma string Base64 e retorna
-                return Convert.ToBase64String(bytes).Replace(" ","");
+                return Convert.ToBase64String(bytes).Replace(" ", "");
             }
         }
     }
