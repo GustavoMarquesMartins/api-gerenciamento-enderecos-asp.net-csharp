@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace GerenciamentoDeEndereco.Migrations
+namespace AddressManagement.Migrations
 {
     [DbContext(typeof(UserDbContext))]
     partial class UserDbContextModelSnapshot : ModelSnapshot
@@ -42,7 +42,7 @@ namespace GerenciamentoDeEndereco.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("salt")
+                    b.Property<string>("Salt")
                         .IsRequired()
                         .HasColumnType("longtext");
 

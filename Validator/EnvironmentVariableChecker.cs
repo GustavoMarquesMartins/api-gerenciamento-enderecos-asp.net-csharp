@@ -5,7 +5,7 @@
 
         public static readonly string[] RequiredEnvVariables =
              {
-                "CHAVE_SECRETA_APLICACAO",
+                "SECRET_KEY_APPLICATION",
                 "DATABASE_HOST",
                 "DATABASE_PORT",
                 "DATABASE_NAME",

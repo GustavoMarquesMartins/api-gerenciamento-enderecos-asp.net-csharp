@@ -34,7 +34,7 @@ builder.Configuration.AddEnvironmentVariables();
 // Retrieves environment variables and settings
 var smtpEmail = builder.Configuration["SMTP_EMAIL"];
 var smtpAppPassword = builder.Configuration["SMTP_APP_PASSWORD"];
-var secretKey = builder.Configuration["CHAVE_SECRETA_APLICACAO"];
+var secretKey = builder.Configuration["SECRET_KEY_APPLICATION"];
 var dbHost = builder.Configuration["DATABASE_HOST"];
 var dbPort = builder.Configuration["DATABASE_PORT"];
 var dbName = builder.Configuration["DATABASE_NAME"];
